@@ -1,0 +1,28 @@
+﻿@using BlazorBarcodeScanner.ZXing.JS
+<MudDialog>
+    <DialogContent>
+        <BlazorBarcodeScanner.ZXing.JS.BarcodeReader Title=@string.Empty
+                                                     ShowResult="false"
+                                                     ShowStop="false"   
+                                                     StartCameraAutomatically="true"
+                                                     ShowStart="false"
+                                                     ShowReset="false"
+                                                     ShowToggleTorch="false"
+                                                     ShowVideoDeviceList="false"
+                                                     OnBarcodeReceived="LocalReceivedBarcodeText"
+                                                     VideoWidth="250"
+                                                     VideoHeight="200" />
+    </DialogContent>
+</MudDialog>
+@code {
+    [CascadingParameter]
+    private MudDialogInstance MudDialog { get; set; }
+
+    string barcodeText = "";
+
+    private void LocalReceivedBarcodeText(BarcodeReceivedEventArgs args)
+    {
+        this.barcodeText = args.BarcodeText;
+        MudDialog.Close(DialogResult.Ok(barcodeText));
+    }
+}

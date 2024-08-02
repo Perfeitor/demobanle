@@ -1,0 +1,105 @@
+﻿@page "/Nghiepvu/Danhsachphieunhaphang/phieunhapkiemke"
+@using System.Globalization
+@using DBDATA.Models
+@using MUDTEMPLATE.DBData
+@inject IConfiguration _config
+
+@inject DBDATA.Context.DATAContext DBct
+
+
+<MudPaper Class="pt-2 px-2 mt-2">
+    <MudGrid Justify="Justify.FlexStart" Spacing="1">
+        <MudItem xs="6" sm="3" lg="2">
+            <MudDatePicker Label="Từ ngày" Margin="Margin.Dense" Culture="@GetVietNamCulture()" @bind-Date="tungay" Variant="Variant.Outlined" Color="Color.Success" />
+        </MudItem>
+        <MudItem xs="6" sm="3" lg="2">
+            <MudDatePicker Label="Đến ngày" Margin="Margin.Dense" Culture="@GetVietNamCulture()" @bind-Date="denngay" Variant="Variant.Outlined" Color="Color.Secondary" />
+        </MudItem>
+        <MudHidden Breakpoint="Breakpoint.LgAndDown">
+            <MudItem xs="6">
+                <MudSpacer></MudSpacer>
+            </MudItem>
+        </MudHidden>
+
+        <MudItem>
+            <MudButton Variant="Variant.Filled" FullWidth Class="my-1" StartIcon="@Icons.Material.Filled.Search" OnClick="Timkiem" Color="Color.Primary">Tìm kiếm</MudButton>
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+
+<MudPaper Class="mt-2">
+    <MudMenu Class="d-block" LockScroll="true" PositionAtCursor="true" ActivationEvent="MouseEvent.RightClick">
+        <ActivatorContent>
+            <MudTable Class="mt-3" Dense Bordered Height="465px"
+                      ReadOnly="false" HeaderClass="pa-1" Items="dt.Select()"
+                      T="DataRow" MultiSelection="false" RowClass="pa-0" Hover="true" Breakpoint="Breakpoint.None">
+                <ToolBarContent>
+                    <MudText Typo="Typo.h6">Danh sách phiếu nhập kiểm kê</MudText>
+                </ToolBarContent>
+                <HeaderContent>
+                    <MudTh Style="text-align:center; white-space:nowrap;"> Số giao dịch </MudTh>
+                    <MudTh Style="text-align:center; white-space:nowrap;"> Phiếu cân đối </MudTh>
+                    <MudTh Style="text-align:center; white-space:nowrap;"> Kho hàng </MudTh>
+                    <MudTh Style="text-align:center; white-space:nowrap;"> Nội dung </MudTh>
+                    @* <MudTh Style="text-align:center; white-space:nowrap;"> Tổng số lượng </MudTh>
+                    <MudTh Style="text-align:center; white-space:nowrap;"> Tiền hàng </MudTh>
+                    <MudTh Style="text-align:center; white-space:nowrap;"> Tiền hàng theo giá bán </MudTh>
+                    <MudTh Style="text-align:center; white-space:nowrap;"> Ngày tạo </MudTh>
+                    <MudTh Style="text-align:center; white-space:nowrap;"> Trạng thái </MudTh> *@
+                    <MudTh></MudTh>
+                </HeaderContent>
+
+                <RowTemplate>
+                    <MudTd DataLabel="Số giao dịch">@context["Magiaodichpk"].ToString()</MudTd>
+                    <MudTd DataLabel="Phiếu cân đối"> @context["Magiaodichphu"].ToString()</MudTd>
+                    <MudTd DataLabel="Kho hàng" Style="padding:9px"> @context["Tenkhohang"].ToString()</MudTd>
+                    <MudTd DataLabel="Nội dung" Style="padding:10px"> @context["Ghichu"].ToString()</MudTd>
+                    @* <MudTd DataLabel="Tổng số lượng" Style="text-align:right"> @context["Soluong"].ToString()</MudTd>
+                    <MudTd DataLabel="Tiền hàng" Style="text-align:right"> @(string.IsNullOrEmpty(context["Tienhang"].ToString()) ? "0" : Convert.ToDecimal(context["Tienhang"]).ToString("#,##0"))</MudTd>
+                    <MudTd DataLabel="Tiền hàng theo giá bán" Style="text-align:right"> @(string.IsNullOrEmpty(context["Tientheogiaban"].ToString()) ? "0" : Convert.ToDecimal(context["Tientheogiaban"]).ToString("#,##0"))</MudTd>
+                    <MudTd DataLabel="Ngày tạo"> @context["Ngaytao"].ToString()</MudTd>
+                    <MudTd DataLabel="Trạng thái" Style="text-align:right"> @context["Trangthai"].ToString()</MudTd> *@
+                    <MudTd><MudButton Variant="Variant.Filled" Color="Color.Primary">Xem đơn</MudButton></MudTd>
+                </RowTemplate>
+            </MudTable>
+        </ActivatorContent>
+    </MudMenu>
+</MudPaper>
+
+@code {
+    DateTime? tungay = DateTime.Today;
+    DateTime? denngay = DateTime.Today;
+
+    private bool _loading = false;
+
+    private DataTable dt = new DataTable();
+
+    public CultureInfo GetVietNamCulture()
+    {
+        var culture = new CultureInfo("vi-VN");
+        DateTimeFormatInfo formatInfo = culture.DateTimeFormat;
+        formatInfo.AbbreviatedDayNames = new[] { "T2", "T3", "T4", "T5", "T6", "T7", "CN" };
+        formatInfo.DayNames = new[] { "Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "Chủ Nhật" };
+        var monthNames = new[]
+        {"Tháng 1", "Tháng 2", "Tháng 3", "Tháng 4", "Tháng 5", "Tháng 6", "Tháng 7", "Tháng 8", "Tháng 9", "Tháng 10", "Tháng 11", "Tháng 12", "",};
+        formatInfo.AbbreviatedMonthNames = formatInfo.AbbreviatedMonthGenitiveNames = formatInfo.MonthNames = monthNames;
+        formatInfo.ShortDatePattern = "dd/MM/yyyy";
+        formatInfo.LongDatePattern = "dddd, dd/MMMM/yyyy";
+        formatInfo.FirstDayOfWeek = DayOfWeek.Sunday;
+        DB.Set_Connect(_config.GetConnectionString("DefaultConnection"));
+        return culture;
+    }
+
+    public async void Timkiem()
+    {
+        _loading = true;
+        DB.Set_Connect(_config.GetConnectionString("DefaultConnection"));
+        dt = DB.Fill_GiaodichNXKiemkeByTungayDenngay("10", "0003", "N_KIEMKE", tungay ?? DateTime.Today, denngay ?? DateTime.Today);
+        _loading = false;
+        CultureInfo culture = CultureInfo.GetCultureInfo("vi-VN");
+        Console.WriteLine(culture.DateTimeFormat.ShortDatePattern);
+        Console.WriteLine(culture.DateTimeFormat.MonthNames.FirstOrDefault());
+        StateHasChanged();
+    }
+
+}

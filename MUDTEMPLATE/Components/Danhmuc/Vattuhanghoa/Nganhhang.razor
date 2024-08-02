@@ -1,0 +1,191 @@
+﻿@page "/Danhmuc/Vattuhanghoa/Nganhhang"
+@using MUDTEMPLATE.Services
+@using DBDATA
+@using Microsoft.AspNetCore.Authorization
+
+@inject INganhhangService nganhHangService
+
+@attribute [Authorize]
+
+<MudPaper Class="p-2 mb-2">
+    <MudGrid Spacing="1">
+        @if (createMode)
+        {
+            <MudItem xs="5" md="2">
+                <MudTextField MaxLength="20" Margin="Margin.Dense" ShrinkLabel Label="Mã ngành hàng" Variant="Variant.Outlined" T="string" @bind-Value="@newItem.Manganh"></MudTextField>
+            </MudItem>
+            <MudItem xs="7" md="6">
+                <MudTextField MaxLength="250" Margin="Margin.Dense" ShrinkLabel Label="Tên ngành hàng" Variant="Variant.Outlined" T="string" @bind-Value="@newItem.Tennganh"></MudTextField>
+            </MudItem>
+            <MudItem xs="12" md="4">
+                <MudSelect ShrinkLabel Label="Tính chất" Margin="Margin.Dense" Variant="Variant.Outlined" T="int?" @bind-Value="@newItem.Loai">
+                    <MudSelectItem T="int?" Value="1">Vật tư hàng hoá</MudSelectItem>
+                    <MudSelectItem T="int?" Value="10">Thành phẩm</MudSelectItem>
+                    <MudSelectItem T="int?" Value="2">Dịch vụ</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+        }
+        @if (!createMode)
+        {
+            <MudItem xs="5" md="2">
+                <MudTextField MaxLength="20" Margin="Margin.Dense" ReadOnly="true" ShrinkLabel Label="Mã ngành hàng" Variant="Variant.Outlined" T="string" @bind-Value="@SelectedItem.Manganh"></MudTextField>
+            </MudItem>
+            <MudItem xs="7" md="6">
+                <MudTextField MaxLength="250"  Margin="Margin.Dense" ReadOnly="!editMode" ShrinkLabel Label="Tên ngành hàng" Variant="Variant.Outlined" T="string" @bind-Value="@SelectedItem.Tennganh"></MudTextField>
+            </MudItem>
+            <MudItem xs="12" md="4">
+                <MudSelect ShrinkLabel ReadOnly="!editMode" Label="Tính chất" Margin="Margin.Dense" Variant="Variant.Outlined" T="int?" @bind-Value="@SelectedItem.Loai">
+                    <MudSelectItem T="int?" Value="1">Vật tư hàng hoá</MudSelectItem>
+                    <MudSelectItem T="int?" Value="10">Thành phẩm</MudSelectItem>
+                    <MudSelectItem T="int?" Value="2">Dịch vụ</MudSelectItem>
+                </MudSelect>
+            </MudItem>
+        }
+        <MudItem xs="12" md="12" Class="px-2">
+            <MudButton xs="4" Size="Size.Small" Disabled="@btnStatus" Class="mr-1 mb-2" Variant="Variant.Filled" OnClick="Add" StartIcon="@Icons.Material.Filled.Add" Color="Color.Primary">Thêm</MudButton>
+            <MudButton xs="4" Size="Size.Small" Disabled="@btnStatus" Class="mr-1 mb-2" Variant="Variant.Filled" OnClick="Edit" StartIcon="@Icons.Material.Filled.Edit" Color="Color.Warning">Sửa</MudButton>
+            <MudButton xs="4" Size="Size.Small" Disabled="@btnStatus" Class="mr-1 mb-2" Variant="Variant.Filled" OnClick="Delete" StartIcon="@Icons.Material.Filled.Delete" Color="Color.Error">Xoá</MudButton>
+            <MudButton xs="6" Size="Size.Small" Disabled="@(!btnStatus)" Class="mr-1 mb-2" Variant="Variant.Filled" OnClick="Confirm" StartIcon="@Icons.Material.Filled.Check" Color="Color.Success">Xác nhận</MudButton>
+            <MudButton xs="6" Size="Size.Small" Disabled="@(!btnStatus)" Class="mr-1 mb-2" Variant="Variant.Filled" OnClick="Cancel" StartIcon="@Icons.Material.Filled.Cancel" Color="Color.Error">Huỷ bỏ</MudButton>
+        </MudItem>
+        <MudItem xs="12" md="12">
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <MudAlert Severity="Severity.Warning">@errorMessage</MudAlert>
+            }
+            @if (!string.IsNullOrEmpty(successMessage))
+            {
+                <MudAlert Severity="Severity.Success">@successMessage</MudAlert>
+            }
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+
+<MudPaper Style="max-height: 70vh">
+    <MudDataGrid Dense="true" Breakpoint="Breakpoint.None" Style="white-space:nowrap; min-width: 100%;" Bordered="true" Striped="true" Items="@Nganhhangs" RowClassFunc="HighlightSelectedItem" SortMode="SortMode.Multiple" MultiSelection="false" Hover="true" @bind-SelectedItem=@SelectedItem>
+        <Columns>
+            <PropertyColumn Sortable="false" Property="x => x.Manganh" Title="Mã ngành" />
+            <PropertyColumn CellStyle="width:500px" Class="p-1" Property="x => x.Tennganh" Title="Tên ngành" />
+            <PropertyColumn Property="x => x.Madonvi" Title="Mã đơn vị" />
+            <PropertyColumn Property="x => x.Ngaytao" Title="Ngày tạo" />
+            <PropertyColumn Property="x => x.Tendangnhap" Title="Người tạo" />
+            <PropertyColumn Property="x => x.Loai" Title="Loại" />
+        </Columns>
+        <PagerContent>
+            <MudDataGridPager Style="max-width:100%" T="DBDATA.Models.Nganhhang" />
+        </PagerContent>
+    </MudDataGrid>
+</MudPaper>
+@code{
+    #region Biến
+    List<DBDATA.Models.Nganhhang> Nganhhangs = new();
+    bool btnStatus = false;
+    bool createMode = false;
+    bool editMode = false;
+    string errorMessage = string.Empty;
+    string successMessage = string.Empty;
+    DBDATA.Models.Nganhhang newItem = new();
+    DBDATA.Models.Nganhhang SelectedItem = new();
+    #endregion
+
+    #region Khởi tạo
+    protected override async Task OnInitializedAsync()
+    {
+        Nganhhangs = await nganhHangService.GetAllNganhhang();
+        if(Nganhhangs.Count>0)
+            SelectedItem = Nganhhangs[0];
+        return;
+    }
+    #endregion
+
+    #region Phương thức
+    public string HighlightSelectedItem(DBDATA.Models.Nganhhang SelectedNganhhang, int RowNumber)
+    {
+        if(SelectedItem != null && SelectedItem.Equals(SelectedNganhhang))
+        {
+            return "selected";
+        }
+        return string.Empty;
+    }
+    public void Add()
+    {
+        errorMessage = string.Empty;
+        successMessage = string.Empty;
+        createMode = true;
+        btnStatus = true;
+    }
+    public void Edit()
+    {
+        errorMessage = string.Empty;
+        successMessage = string.Empty;
+        editMode = true;
+        btnStatus = true;
+    }
+    public void Delete()
+    {
+        errorMessage = string.Empty;
+        successMessage = string.Empty;
+        btnStatus = true;
+    }
+    public async Task Confirm()
+    {
+        if (createMode)
+        {
+            if(!string.IsNullOrEmpty(newItem.Manganh) && !string.IsNullOrEmpty(newItem.Tennganh))
+            {
+                await nganhHangService.AddItem(newItem);
+                Nganhhangs = await nganhHangService.GetAllNganhhang();
+                successMessage = "Đã thêm ngành hàng";
+            }
+            else
+            {
+                errorMessage = "Xin vui lòng điền đầy đủ thông tin";
+            }
+        }
+        else if(btnStatus)
+        {
+            if (editMode)
+            {
+                await nganhHangService.EditItem(SelectedItem);
+                Nganhhangs = await nganhHangService.GetAllNganhhang();
+                successMessage = "Đã sửa ngành hàng";
+            }
+            else
+            {
+                await nganhHangService.DeleteItem(SelectedItem);
+                Nganhhangs = await nganhHangService.GetAllNganhhang();
+                successMessage = "Đã xoá ngành hàng";
+            }
+        }
+        SelectedItem = new();
+        newItem = new();
+        btnStatus = false;
+        createMode = false;
+        editMode = false;
+        StateHasChanged();
+    }
+    public void Cancel()
+    {
+
+        SelectedItem = new();
+        newItem = new();
+        btnStatus = false;
+        createMode = false;
+        editMode = false;
+    }
+    #endregion
+}
+
+<style>
+    .selected {
+        background-color: #1E88E5 !important;
+    }
+
+        .selected > td {
+            color: white !important;
+        }
+
+            .selected > td .mud-input {
+                color: white !important;
+            }
+</style>

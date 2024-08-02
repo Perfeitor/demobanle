@@ -1,0 +1,762 @@
+﻿@page "/Danhmuc/Vattuhanghoa/Danhsachmathang"
+
+@using DBDATA.Models
+@using MUDTEMPLATE.Components.Dialog
+@using MUDTEMPLATE.Services
+@using Microsoft.AspNetCore.Authorization
+@using System.Globalization
+
+@inject IDialogService DialogService;
+@inject IMathangService matHangService;
+@inject INganhhangService nganhHangService;
+@inject INhomhangService nhomHangService;
+@inject IKhachhangService khachHangService;
+@inject IBarcodeService barcodeService;
+@inject IDonvitinhService donvitinhService;
+@inject IVatService vatService;
+@inject INguoidungService nguoiDungService;
+
+@attribute [Authorize]
+
+<PageTitle>Danh sách mặt hàng</PageTitle>
+<MudText Typo="Typo.h5" Class="p-2" Style="font-weight:bold">Danh sách mặt hàng</MudText>
+<MudPaper Class="p-0">
+    <MudTabs Rounded="true" ApplyEffectsToContainer="true" Class="p-0" Color="@Color.Primary">
+        <MudTabPanel Text="1. Thông tin chung">
+            <div class="p-1">
+                <MudText Typo="Typo.h6">Thông tin sản phẩm</MudText>
+                <MudGrid>
+                    <MudItem xs="12" md="6">  
+                        <MudGrid>
+                            @*Nhà cung cấp*@
+                            <MudItem xs="5" md="5">
+                                <MudAutocomplete ShrinkLabel ReadOnly="!edit" T="string" ShowProgressIndicator="true" Variant="Variant.Outlined" Label="Nhà cung cấp" Dense="true" Margin="Margin.Dense" @bind-Value="@lastClickItem.Makhachhang" SearchFunc="searchByMaNCCDetailView" @bind-Value:after="@ChangedNCC" AdornmentIcon="@Icons.Material.Filled.Search" Adornment="Adornment.End"/>
+                            </MudItem>
+                            <MudItem Class="pl-1" xs="7" md="7">
+                                <MudTextField ReadOnly="true" Margin="Margin.Dense" Variant="Variant.Outlined" @bind-Value=@selectedNCC />
+                            </MudItem>
+
+                            @*------------------------------------*@
+                            @*Ngành hàng*@
+                            <MudItem Class="pt-1" xs="5" md="5">
+                                <MudAutocomplete ShrinkLabel ReadOnly="!edit" ShowProgressIndicator="true" Variant="Variant.Outlined" Label="Ngành hàng" Dense="true" Margin="Margin.Dense" @bind-Value="@lastClickItem.Manganh" @bind-Value:after=@ChangedNganhhang SearchFunc="searchByMaNganhhangDetailView" AdornmentIcon="@Icons.Material.Filled.Search" Adornment="Adornment.End" />
+                            </MudItem>
+                            <MudItem Class="pl-1 pt-1" xs="7" md="7">
+                                <MudTextField ReadOnly="true" Margin="Margin.Dense" Variant="Variant.Outlined" @bind-Value=@selectedNganhhang />
+                            </MudItem>
+
+                            @*------------------------------------*@
+                            @*Nhóm hàng*@
+                            <MudItem Class="pt-1" xs="5" md="5">
+                                <MudAutocomplete ShrinkLabel ReadOnly="!edit" ShowProgressIndicator="true" Variant="Variant.Outlined" Label="Nhóm hàng" Dense="true" Margin="Margin.Dense" @bind-Value="@lastClickItem.Manhomhang" @bind-Value:after=@ChangedNhomhang SearchFunc="searchByMaNhomhangDetailView" AdornmentIcon="@Icons.Material.Filled.Search" Adornment="Adornment.End" />
+                            </MudItem>
+                            <MudItem Class="pl-1 pt-1" xs="7" md="7">
+                                <MudTextField ReadOnly="true" Margin="Margin.Dense" Variant="Variant.Outlined" @bind-Value=@selectedNhomhang />
+                            </MudItem>
+
+                            @*------------------------------------*@
+                            @*Đơn vị tính*@
+                            <MudItem Class="pt-1" xs="4" md="4">
+                                <MudSelect ShrinkLabel ReadOnly="!edit" Text="@lastClickItem.Madvtinh" Label="Đơn vị tính" Dense="true" Variant="Variant.Outlined" Margin="Margin.Dense" T="string" @bind-Value="@lastClickItem.Madvtinh" @bind-Value:after=ChangedDonvitinh>
+                                    <Virtualize Items="@donviTinhs" Context="donvitinh">
+                                        <MudSelectItem Value="@donvitinh.Madvtinh">
+                                            <MudText Class="mb-1">@donvitinh.Madvtinh</MudText>
+                                            <MudText>@donvitinh.Donvile/@donvitinh.Donvilon</MudText>
+                                        </MudSelectItem>
+                                    </Virtualize>
+                                </MudSelect>
+                            </MudItem>
+                            <MudItem Class="pl-1 pt-1" xs="2" md="2">
+                                <MudTextField ReadOnly="true" Margin="Margin.Dense" Variant="Variant.Outlined" @bind-Value=@selectedDonvitinh.Donvile />
+                            </MudItem>
+                            <MudItem Class="px-1 pt-3" xs="1" md="1">
+                                <div class="d-flex justify-center">
+                                    <MudText>/</MudText>
+                                </div>
+                            </MudItem>
+                            <MudItem Class="pl-1 pt-1" xs="3" md="2">
+                                <MudTextField ReadOnly="true" Margin="Margin.Dense" Variant="Variant.Outlined" @bind-Value=@selectedDonvitinh.Donvilon />
+                            </MudItem>
+                            <MudItem Class="pt-1" xs="6" md="3">
+                                <MudTextField InputType="InputType.Number" OnBlur="() => lastClickItem.Quycach = ValidateDecimalValue(lastClickItem.Quycach)" ReadOnly="!edit" ShrinkLabel Label="Quy đổi" Margin="Margin.Dense" Variant="Variant.Outlined" @bind-Value=@lastClickItem.Quycach Format="0.00" />
+                            </MudItem>
+                            <MudFlexBreak />
+
+                            @*------------------------------------*@
+                            @*VAT*@
+                            <MudItem Class="pt-1" xs="5" md="3">
+                                <MudSelect ReadOnly="!edit" Dense="true" ShrinkLabel Label="VAT mua" T="string" Margin="Margin.Dense" @bind-Value=@lastClickItem.Mavatmua @bind-Value:after=@ChangedVatmua Variant="Variant.Outlined">
+                                    <Virtualize Items="@vats" Context="vat">
+                                        <MudSelectItem @bind-Value="@vat.Mavat">
+                                            <MudText Class="mb-1">@vat.Mavat</MudText>
+                                            <MudText>@vat.Tenvat</MudText>
+                                        </MudSelectItem>
+                                    </Virtualize>
+                                </MudSelect>
+                            </MudItem>
+                            <MudItem Class="pl-1 pt-1" xs="5" md="3">
+                                <MudTextField Margin="Margin.Dense" T="string" @bind-Value="@selectedVatmua" ReadOnly="true" Variant="Variant.Outlined" />
+                            </MudItem>
+                            <MudItem Class="pl-sm-6 pt-1" xs="5" md="3">
+                                <MudSelect ReadOnly="!edit" Dense="true" ShrinkLabel Label="VAT bán" T="string" Margin="Margin.Dense" @bind-Value=@lastClickItem.Mavatban @bind-Value:after=@ChangedVatban Variant="Variant.Outlined">
+                                    <Virtualize Items="@vats" Context="vat">
+                                        <MudSelectItem @bind-Value="vat.Mavat">
+                                            <MudText Class="mb-1">@vat.Mavat</MudText>
+                                            <MudText>@vat.Tenvat</MudText>
+                                        </MudSelectItem>
+                                    </Virtualize>
+                                </MudSelect>
+                            </MudItem>
+                            <MudItem Class="pl-1 pt-1" xs="5" md="3">
+                                <MudTextField Margin="Margin.Dense" T="string" @bind-Value="@selectedVatban" ReadOnly="true" @bind-Value:after=@ChangedVatban Variant="Variant.Outlined" />
+                            </MudItem>
+                        </MudGrid>
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudGrid>
+                            @*Mã sản phẩm*@
+                            <MudItem xs="5" md="5">
+                                <MudTextField MaxLength="20" ShrinkLabel ReadOnly="!edit" Variant="Variant.Outlined" Label="Mã sản phẩm" Margin="Margin.Dense" @bind-Value="@lastClickItem.Masieuthi" />
+                            </MudItem>
+                            <MudItem Class="pl-1" xs="7" md="7">
+                                <MudTextField MaxLength="300" ReadOnly="!edit" Margin="Margin.Dense" Variant="Variant.Outlined" @bind-Value=@lastClickItem.Tendaydu />
+                            </MudItem>
+                            <MudItem Class="pt-1" xs="12" md="12">
+                                <MudTextField MaxLength="250" ReadOnly="!edit" ShrinkLabel Label="Tên rút gọn" @bind-Value=@lastClickItem.Tenviettat Variant="Variant.Outlined" Margin="Margin.Dense" />
+                            </MudItem>
+                            <MudItem Class="pt-1" xs="5" md="5">
+                                <MudTextField MaxLength="30" ReadOnly="!edit" ShrinkLabel Label="Mã hàng NCC" @bind-Value=@lastClickItem.Mahangcuancc Variant="Variant.Outlined" Margin="Margin.Dense" />
+                            </MudItem>
+                            <MudItem Class="pt-1 pl-1" xs="7" md="7">
+                                <MudSelect ReadOnly="!edit" ShrinkLabel Label="Trạng thái kinh doanh" Variant="Variant.Outlined" Dense="true" Margin="Margin.Dense" T="int?" @bind-Value=@lastClickItem.Trangthaikd>
+                                    <MudSelectItem T="int?" Value="1">Có</MudSelectItem>
+                                    <MudSelectItem T="int?" Value="0">Không</MudSelectItem>
+                                </MudSelect>
+                            </MudItem>
+                            <MudItem Class="pt-1" xs="10" md="10">
+                                <MudTextField MaxLength="50" Variant="Variant.Outlined" Margin="Margin.Dense" ReadOnly="!edit" ShrinkLabel Label="Mã vạch" T="string" @bind-Value=@newBarcode></MudTextField>
+                            </MudItem>
+                            <MudItem Class="pt-2 pr-4" xs="2" md="2">
+                                <MudIconButton Disabled="!edit" Icon="@Icons.Material.Filled.Add" Variant="Variant.Filled" Color="Color.Primary" OnClick="addBarcode"></MudIconButton>
+                            </MudItem>
+                            <MudItem Class="pt-1" xs="6" md="6">
+                                <MudTextField InputType="InputType.Number" OnBlur="() => lastClickItem.Tyleckmua = ValidateDecimalValue(lastClickItem.Tyleckmua)" ReadOnly="!edit" Variant="Variant.Outlined" Margin="Margin.Dense" Format="0.00" ShrinkLabel Label="Chiết khấu mua" T="decimal?" @bind-Value=@lastClickItem.Tyleckmua></MudTextField>
+                            </MudItem>
+                            <MudItem Class="pt-1" xs="6" md="6">
+                                <MudTextField InputType="InputType.Number" OnBlur="() => lastClickItem.Tyleckban = ValidateDecimalValue(lastClickItem.Tyleckban)" ReadOnly="!edit" Variant="Variant.Outlined" Margin="Margin.Dense" Format="0.00" ShrinkLabel Label="Chiết khấu bán" T="decimal?" @bind-Value=@lastClickItem.Tyleckban></MudTextField>
+                            </MudItem>
+                        </MudGrid>
+                    </MudItem>
+                </MudGrid>
+            </div>
+        </MudTabPanel>
+        @* <MudTabPanel Text="2. Thông tin khác">
+            <MudContainer Class="p-3">
+                <h1>Tab 2</h1>
+            </MudContainer>
+        </MudTabPanel>
+        <MudTabPanel Text="3. Thông tin hải quan">
+            <MudContainer Class="p-3">
+                <h1>Tab 3</h1>
+            </MudContainer>
+        </MudTabPanel>
+        <MudTabPanel Text="4. Thành phần cấu tạo">
+            <MudContainer Class="p-3">
+                <h1>Tab 4</h1>
+            </MudContainer>
+        </MudTabPanel> *@
+    </MudTabs>
+</MudPaper>
+
+<MudPaper Class="mt-4">
+    <MudGrid Class="m-0 p-1">
+        <MudItem Class="pl-1 pt-1" xs="12" md="6">
+            <MudGrid Class="pr-7">
+                <MudItem Class="pl-8 pt-8 pb-0" xs="12" md="12">
+                    <MudText Typo="Typo.h6">Giá cả vật tư</MudText>
+                </MudItem>
+                <MudItem Class="pt-5" xs="6" md="6">
+                    <MudTextField InputType="InputType.Number" OnBlur="() => lastClickItem.Giathungbuoncovat = ValidateDecimalValue(lastClickItem.Giathungbuoncovat)" ReadOnly="!edit" Variant="Variant.Outlined" Margin="Margin.Dense" ShrinkLabel Label="Giá thùng có VAT" T="decimal?" Format="0.00" @bind-Value=@lastClickItem.Giathungbuoncovat></MudTextField>
+                </MudItem>
+                <MudItem Class="pl-1 pt-5" xs="6" md="6">
+                    <MudTextField InputType="InputType.Number" OnBlur="() => lastClickItem.Giathungbuonchuavat = ValidateDecimalValue(lastClickItem.Giathungbuonchuavat)" ReadOnly="!edit" Variant="Variant.Outlined" Margin="Margin.Dense" ShrinkLabel Label="Giá thùng chưa VAT" T="decimal?" Format="0.00" @bind-Value=@lastClickItem.Giathungbuonchuavat></MudTextField>
+                </MudItem>
+                <MudItem Class="pt-1" xs="6" md="6">
+                    <MudTextField InputType="InputType.Number" OnBlur="() => lastClickItem.Tylelaile = ValidateDecimalValue(lastClickItem.Tylelaile)" ReadOnly="!edit" Variant="Variant.Outlined" Margin="Margin.Dense" ShrinkLabel Label="%Lãi bán lẻ" T="decimal?" Format="0.00" @bind-Value=@lastClickItem.Tylelaile></MudTextField>
+                </MudItem>
+                <MudItem Class="pl-1 pt-1" xs="6" md="6">
+                    <MudTextField InputType="InputType.Number" OnBlur="() => lastClickItem.Tylelaibuon = ValidateDecimalValue(lastClickItem.Tylelaibuon)" ReadOnly="!edit" Variant="Variant.Outlined" Margin="Margin.Dense" ShrinkLabel Label="%Lãi bán buôn" T="decimal?" Format="0.00" @bind-Value=@lastClickItem.Tylelaibuon></MudTextField>
+                </MudItem>
+                <MudItem Class="pt-1" xs="6" md="6">
+                    <MudTextField InputType="InputType.Number" OnBlur="() => lastClickItem.Giamuacovat = ValidateDecimalValue(lastClickItem.Giamuacovat)" ReadOnly="!edit" Variant="Variant.Outlined" Margin="Margin.Dense" ShrinkLabel Label="Giá mua có VAT" T="decimal?" Format="0.00" @bind-Value=@lastClickItem.Giamuacovat></MudTextField>
+                </MudItem>
+                <MudItem Class="pl-1 pt-1" xs="6" md="6">
+                    <MudTextField InputType="InputType.Number" OnBlur="() => lastClickItem.Giamuachuavat = ValidateDecimalValue(lastClickItem.Giamuachuavat)" ReadOnly="!edit" Variant="Variant.Outlined" Margin="Margin.Dense" ShrinkLabel Label="Giá mua chưa VAT" T="decimal?" Format="0.00" @bind-Value=@lastClickItem.Giamuachuavat></MudTextField>
+                </MudItem>
+                <MudItem Class="pt-1" xs="6" md="6">
+                    <MudTextField InputType="InputType.Number" OnBlur="() => lastClickItem.Giabanlecovat = ValidateDecimalValue(lastClickItem.Giabanlecovat)" ReadOnly="!edit" Variant="Variant.Outlined" Margin="Margin.Dense" ShrinkLabel Label="Giá bán lẻ" T="decimal?" Format="0.00" @bind-Value=@lastClickItem.Giabanlecovat></MudTextField>
+                </MudItem>
+                <MudItem Class="pl-1 pt-1" xs="6" md="6">
+                    <MudTextField InputType="InputType.Number" OnBlur="() => lastClickItem.Giabanbuoncovat = ValidateDecimalValue(lastClickItem.Giabanbuoncovat)" ReadOnly="!edit" Variant="Variant.Outlined" Margin="Margin.Dense" ShrinkLabel Label="Giá bán buôn" T="decimal?" Format="0.00" @bind-Value=@lastClickItem.Giabanbuoncovat></MudTextField>
+                </MudItem>
+            </MudGrid>
+        </MudItem>
+        <MudItem Class="pt-1 pr-7 pl-1" xs="12" md="6">
+            <MudDataGrid Breakpoint="Breakpoint.None" SortMode="SortMode.None" FixedHeader="true" Dense="true" Striped="true" Hover="true" Height="35vh" Items="@lastClickItemBarcodeList">
+                <Columns>
+                    <PropertyColumn Property="@(x => x)" Title="Danh sách mã vạch"/>
+                </Columns>
+            </MudDataGrid>
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+
+<div class="mt-3">
+    <MudButton xs="4" Size="Size.Small" Disabled="@btnStatus" Class="mr-1 mb-2" Variant="Variant.Filled" OnClick="Add" StartIcon="@Icons.Material.Filled.Add" Color="Color.Primary">Thêm</MudButton>
+    <MudButton xs="4" Size="Size.Small" Disabled="@btnStatus" Class="mr-1 mb-2" Variant="Variant.Filled" OnClick="Edit" StartIcon="@Icons.Material.Filled.Edit" Color="Color.Warning">Sửa</MudButton>
+    <MudButton xs="4" Size="Size.Small" Disabled="@btnStatus" Class="mr-1 mb-2" Variant="Variant.Filled" OnClick="Delete" StartIcon="@Icons.Material.Filled.Delete" Color="Color.Error">Xoá</MudButton>
+    <MudButton xs="6" Size="Size.Small" Disabled="@(!btnStatus)" Class="mr-1 mb-2" Variant="Variant.Filled" OnClick="Confirm" StartIcon="@Icons.Material.Filled.Check" Color="Color.Success">
+        @if (_processing)
+        {
+            <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+            <MudText Class="ms-2">Đang xử lý</MudText>
+        }
+        else
+        {
+            <MudText>Xác nhận</MudText>
+        }
+    </MudButton>
+    <MudButton xs="6" Size="Size.Small" Disabled="@(!btnStatus)" Class="mr-1 mb-2" Variant="Variant.Filled" OnClick="Cancel" StartIcon="@Icons.Material.Filled.Cancel" Color="Color.Error">Huỷ bỏ</MudButton>
+</div>
+
+@if (!string.IsNullOrEmpty(successMessage) || !string.IsNullOrEmpty(errorMessage))
+{
+    <MudContainer Class="mt-3">
+        @if (!string.IsNullOrEmpty(successMessage))
+        {
+            <MudAlert Severity="Severity.Success">@successMessage</MudAlert>
+        }
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <MudAlert Severity="Severity.Warning">@errorMessage</MudAlert>
+        }
+    </MudContainer>
+}
+
+<MudPaper Class="mt-2">
+    <MudGrid Class="m-0 p-1">
+        <MudItem Class="p-0 m-1" xs="4" md="2">
+            <MudSelect Dense="true" Variant="Variant.Outlined" Margin="Margin.Dense" Label="Tiêu chí" ShrinkLabel T="int" @bind-Value="searchMode" @bind-Value:after="changedSearchMode">
+                <MudSelectItem T="int" Value="1">Barcode</MudSelectItem>
+                <MudSelectItem T="int" Value="2">Mã sản phẩm</MudSelectItem>
+                <MudSelectItem T="int" Value="3">Tên sản phẩm</MudSelectItem>
+                <MudSelectItem T="int" Value="4">Mã NCC</MudSelectItem>
+                <MudSelectItem T="int" Value="5">Tên NCC</MudSelectItem>
+                <MudSelectItem T="int" Value="6">Tên ngành hàng</MudSelectItem>
+                <MudSelectItem T="int" Value="7">Tên nhóm hàng</MudSelectItem>
+            </MudSelect>
+        </MudItem>
+        <MudItem Class="p-0 m-1" xs="6" md="3">
+            @if(searchMode == 1)
+            {
+                <MudTextField Margin="Margin.Dense" @bind-Value="@LocalSearchText" @bind-Value:after=startSearch Variant="Variant.Outlined" T="string" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Outlined.DocumentScanner" OnAdornmentClick="OpenDialog" />
+            }
+            else
+            {
+                <MudTextField Margin="Margin.Dense" @bind-Value="@LocalSearchText" @bind-Value:after=startSearch Variant="Variant.Outlined" T="string"/>
+            } 
+        </MudItem>
+    </MudGrid>
+
+    <MudDataGrid SortMode="SortMode.None" Height="300px" FixedHeader="true" Breakpoint="Breakpoint.None" Bordered="true" Striped="true" Hover="true" RowClass="cursor-pointer" T="Mathang" Items="matHangs" Dense="true" Style="white-space:nowrap; min-width: 100%;" Loading="loadingStatus" MultiSelection="true" @bind-SelectedItems=@SelectedItems RowClick="Rowclick" Virtualize="true">
+        <Columns>
+            <PropertyColumn Resizable="false" Property="x => matHangs.IndexOf(x)+1" Title="STT" Sortable="false"/>
+            <SelectColumn T="Mathang" />
+            <PropertyColumn Resizable="false" Property="x => nganhHangs.FirstOrDefault(n => n.Manganh == x.Manganh).Tennganh" Title="Ngành hàng" Sortable="false" />
+            <PropertyColumn Resizable="false" Property="x => nhomHangs.FirstOrDefault(n => n.Manhomhang == x.Manhomhang).Tennhomhang" Title="Nhóm hàng" Sortable="false" />
+            <PropertyColumn Resizable="false" Property="x => x.Makhachhang" Title="Mã nhà cung cấp"/>
+            <PropertyColumn Resizable="false" Property="x => khachHangs.FirstOrDefault(n => n.Makhachhang.ToUpper() == x.Makhachhang.ToUpper()).Tenkhachhang" Title="Nhà cung cấp" Sortable="false" />
+            <PropertyColumn Resizable="false" Property="x => x.Masieuthi" Title="Mã sản phẩm" Sortable="false"/>
+            <PropertyColumn Resizable="false" Property="x => x.Tendaydu" Title="Tên sản phẩm" Sortable="false"/>
+            <PropertyColumn Resizable="false" Property="x => x.Mahangcuancc" Title="Mã hàng NCC" Sortable="false" />
+            <PropertyColumn Resizable="false" Property="x => x.Mavatban" Title="Mã VAT bán" Sortable="false" />
+            <PropertyColumn Resizable="false" Property="x => x.Mavatmua" Title="Mã VAT mua" Sortable="false" />
+            <PropertyColumn CellStyle="text-align: right" Resizable="false" Property="@(x => (x.Giamuacovat ?? 0.00M).ToString("F2"))" Title="Giá mua có VAT" Sortable="false" />
+            <PropertyColumn CellStyle="text-align: right" Resizable="false" Property="@(x => (x.Giabanlecovat ?? 0.00M).ToString("F2"))" Title="Giá bán lẻ" Sortable="false" />
+            <PropertyColumn CellStyle="text-align: right" Resizable="false" Property="@(x => (x.Giabanbuoncovat ?? 0.00M).ToString("F2"))" Title="Giá bán buôn" Sortable="false" />
+            <PropertyColumn Resizable="false" Property="@(x => (x.Tylelaile ?? 0.00M).ToString("F2"))" Title="%Lãi bán lẻ" Sortable="false" />
+            <PropertyColumn Resizable="false" Property="@(x => (x.Tylelaibuon ?? 0.00M).ToString("F2"))" Title="%Lãi bán lẻ" Sortable="false" />
+            <PropertyColumn CellStyle="text-align: right" Resizable="false" Property="x => x.Trangthaikd" Title="Trạng thái kinh doanh" Sortable="false" />
+            <PropertyColumn Resizable="false" Property="x => x.Madvtinh" Title="Mã đơn vị tính" Sortable="false" />
+            <PropertyColumn Resizable="false" Property="@(x => (x.Quycach ?? 0.00M).ToString("F2"))" Title="Quy cách" Sortable="false" />
+            
+        </Columns>
+        <PagerContent>
+            <MudDataGridPager Style="max-width:100%" T="Mathang" />
+        </PagerContent>
+    </MudDataGrid>
+</MudPaper>
+
+@code {
+    #region Khởi tạo biến
+    bool btnStatus = false;
+    string LocalSearchText = "";
+    bool loadingStatus = false;
+    bool _processing = false;
+    int searchMode = 1;
+    bool edit = false;
+    bool create = false;
+    string selectedNCC = "";
+    string selectedNganhhang = "";
+    string selectedNhomhang = "";
+    string selectedVatmua = "";
+    string selectedVatban = "";
+    string newBarcode = "";
+    string errorMessage = "";
+    string successMessage = "";
+    Donvitinh selectedDonvitinh = new();
+    public Mathang lastClickItem = new(), lastClickItemBackup = new();
+    public HashSet<Mathang> SelectedItems = new();
+    public List<Mathang> matHangs = new(), matHangsBackup = new();
+    public List<DBDATA.Models.Nganhhang> nganhHangs = new();
+    public List<Nhomhang> nhomHangs = new();
+    public List<Khachhang> khachHangs = new();
+    public List<Barcode> barCodes = new();
+    public List<string> lastClickItemBarcodeList = new();
+    public List<Donvitinh> donviTinhs = new();
+    public List<Vat> vats = new();
+    #endregion
+    #region Chạy lần đầu khi mở trang
+    protected override async Task OnInitializedAsync()
+    {
+        loadingStatus = true;
+        matHangs = await matHangService.GetAllMathang();
+        matHangsBackup = matHangs;
+        lastClickItem = matHangs[0];
+        nganhHangs = await nganhHangService.GetAllNganhhang();
+        nhomHangs = await nhomHangService.GetAllNhomhang();
+        khachHangs = await khachHangService.GetAllKhachhang();
+        barCodes = await barcodeService.GetAllBarcode();
+        donviTinhs = await donvitinhService.GetAllDonvitinh();
+        vats = await vatService.GetAllVat();
+        ChangedLastClickItem();
+        loadingStatus = false;
+    }
+    #endregion
+    #region Phương thức
+    private void Add()
+    {
+        btnStatus = true;
+        create = true;
+        SelectedItems = new();
+        lastClickItem = new();
+        ChangedLastClickItem();
+        edit = true;
+        errorMessage = "";
+        successMessage = "";
+    }
+    private void Edit()
+    {
+        lastClickItemBackup = lastClickItem;
+        btnStatus = true;
+        SelectedItems = new();
+        SelectedItems.Add(lastClickItem);
+        edit = true;
+        errorMessage = "";
+        successMessage = "";
+    }
+    private void Delete()
+    {
+        btnStatus = true;
+        errorMessage = "";
+        successMessage = "";
+    }
+    private async Task Confirm()
+    {
+        _processing = true;
+        if (edit)
+        {
+            if (create)
+            {
+                if (!string.IsNullOrEmpty(lastClickItem.Masieuthi) && 
+                    !string.IsNullOrEmpty(lastClickItem.Manganh) &&
+                    !string.IsNullOrEmpty(lastClickItem.Manhomhang) &&
+                    !string.IsNullOrEmpty(lastClickItem.Makhachhang) &&
+                    !string.IsNullOrEmpty(lastClickItem.Madvtinh))
+                {
+                    try
+                    {
+                        lastClickItem.Madonvi = nguoiDungService.GetCookieUnit();
+                        lastClickItem.Ngaytao = DateTime.UtcNow;
+                        lastClickItem.Ngayphatsinh = DateTime.UtcNow;
+                        foreach(var barcode in lastClickItemBarcodeList)
+                        {
+                            await barcodeService.AddBarcode(barcode, lastClickItem.Madonvi, lastClickItem.Masieuthi);
+                        }
+                        await matHangService.AddMathang(lastClickItem);
+                        matHangs = await matHangService.GetAllMathang();
+                        matHangsBackup = matHangs;
+                        lastClickItem = new();
+                        ChangedLastClickItem();
+                        successMessage = "Thêm thành công";
+                    }
+                    catch (Exception e)
+                    {
+                        errorMessage = "Lỗi khi thêm mặt hàng: " + e.Message;
+                    }
+                }
+                else
+                {
+                    errorMessage = "Vui lòng điền đầy đủ thông tin";
+                }
+            }
+            else
+            {
+                try
+                {
+                    var deleteBarcodeList = await barcodeService.GetBarcodeByInfo(lastClickItemBackup.Masieuthi, lastClickItemBackup.Madonvi);
+                    foreach (var barcode in deleteBarcodeList)
+                    {
+                        await barcodeService.RemoveBarcode(barcode);
+                    }
+                    await matHangService.RemoveMathang(lastClickItemBackup);
+                    if (!string.IsNullOrEmpty(lastClickItem.Masieuthi) &&
+                    !string.IsNullOrEmpty(lastClickItem.Manganh) &&
+                    !string.IsNullOrEmpty(lastClickItem.Manhomhang) &&
+                    !string.IsNullOrEmpty(lastClickItem.Makhachhang) &&
+                    !string.IsNullOrEmpty(lastClickItem.Madvtinh))
+                    {
+                        lastClickItem.Madonvi = nguoiDungService.GetCookieUnit();
+                        lastClickItem.Ngaytao = lastClickItemBackup.Ngaytao;
+                        lastClickItem.Ngayphatsinh = DateTime.UtcNow;
+                        foreach (var barcode in lastClickItemBarcodeList)
+                        {
+                            await barcodeService.AddBarcode(barcode, lastClickItem.Madonvi, lastClickItem.Masieuthi);
+                        }
+                        await matHangService.AddMathang(lastClickItem);
+                        matHangs = await matHangService.GetAllMathang();
+                        matHangsBackup = matHangs;
+                        lastClickItem = new();
+                        ChangedLastClickItem();
+                    }
+                    else
+                    {
+                        errorMessage = "Vui lòng điền đầy đủ thông tin";
+                    }
+                    successMessage = "Sửa thành công";
+                }
+                catch (Exception e)
+                {
+                    errorMessage = "Lỗi khi sửa mặt hàng: " + e.Message;
+                }
+            }
+        }
+        else
+        {
+            try
+            {
+                foreach(var mathang in SelectedItems)
+                {
+                    var deleteBarcodeList = await barcodeService.GetBarcodeByInfo(mathang.Masieuthi, mathang.Madonvi);
+                    foreach(var barcode in deleteBarcodeList)
+                    {
+                        await barcodeService.RemoveBarcode(barcode);
+                    }
+                    await matHangService.RemoveMathang(mathang);
+                }
+                matHangs = await matHangService.GetAllMathang();
+                matHangsBackup = matHangs;
+                lastClickItem = new();
+                SelectedItems = new();
+                ChangedLastClickItem();
+                successMessage = "Xoá thành công";
+            }
+            catch (Exception e)
+            {
+                errorMessage = "Lỗi khi xoá mặt hàng: " + e.Message;
+            }
+        }
+        create = false;
+        btnStatus = false;
+        edit = false;
+        _processing = false;
+    }
+    private void Cancel()
+    {
+        btnStatus = false;
+        edit = false;
+        create = false;
+        errorMessage = "";
+        successMessage = "";
+    }
+    private decimal? ValidateDecimalValue(decimal? value)
+    {
+        if (value.HasValue)
+        {
+            var valueStr = value.Value.ToString(CultureInfo.InvariantCulture);
+
+            // Kiểm tra định dạng và giá trị
+            if (decimal.TryParse(valueStr, NumberStyles.Any, CultureInfo.InvariantCulture, out var number))
+            {
+                var parts = valueStr.Split('.');
+                if (parts[0].Length > 20)
+                {
+                    // Giới hạn phần nguyên là 20 chữ số
+                    parts[0] = parts[0].Substring(0, 20);
+                }
+                if (parts.Length > 1 && parts[1].Length > 8)
+                {
+                    // Giới hạn phần thập phân là 8 chữ số
+                    parts[1] = parts[1].Substring(0, 8);
+                }
+                return decimal.Parse(string.Join(".", parts), CultureInfo.InvariantCulture);
+            }
+        }
+        return null;
+    }
+    private void startSearch()
+    {
+        switch (searchMode)
+        {
+            case 1:
+                searchByBarcode();
+                break;
+            case 2:
+                searchByMasp();
+                break;
+            case 3:
+                searchByTensp();
+                break;
+            case 4:
+                searchByMaNCC();
+                break;
+            case 5:
+                searchByTenNCC();
+                break;
+            case 6:
+                searchByTenNganhhang();
+                break;
+            case 7:
+                searchByTenNhomhang();
+                break;
+            default:
+                break;
+        }
+    }
+    private void ChangedNCC()
+    {
+        if (lastClickItem == null || khachHangs == null)
+        {
+            selectedNCC = string.Empty;
+        }
+
+        var item = khachHangs.FirstOrDefault(n => n.Makhachhang?.ToUpper() == lastClickItem.Makhachhang?.ToUpper());
+        selectedNCC = item?.Tenkhachhang ?? string.Empty;
+    }
+    private void ChangedNganhhang()
+    {
+        if (lastClickItem == null || nganhHangs == null)
+        {
+            selectedNganhhang = string.Empty;
+        }
+
+        var item = nganhHangs.FirstOrDefault(n => n.Manganh?.ToUpper() == lastClickItem.Manganh?.ToUpper());
+        selectedNganhhang = item?.Tennganh ?? string.Empty;
+    }
+    private void ChangedNhomhang()
+    {
+        if (lastClickItem == null || nganhHangs == null)
+        {
+            selectedNhomhang = string.Empty;
+        }
+
+        var item = nhomHangs.FirstOrDefault(n => n.Manhomhang?.ToUpper() == lastClickItem.Manhomhang?.ToUpper());
+        selectedNhomhang = item?.Tennhomhang ?? string.Empty;
+    }
+    private void ChangedDonvitinh()
+    {
+        if (lastClickItem == null || nganhHangs == null)
+        {
+            selectedDonvitinh.Donvile = string.Empty;
+            selectedDonvitinh.Donvilon = string.Empty;
+        }
+
+        var item = donviTinhs.FirstOrDefault(n => n.Madvtinh?.ToUpper() == lastClickItem.Madvtinh?.ToUpper());
+        selectedDonvitinh.Donvile = item?.Donvile ?? string.Empty;
+        selectedDonvitinh.Donvilon = item?.Donvilon ?? string.Empty;
+    }
+    private void ChangedVatmua()
+    {
+
+        if (lastClickItem == null || vats == null)
+        {
+            selectedVatmua = string.Empty;
+        }
+
+        var item = vats.FirstOrDefault(n => n.Mavat?.ToUpper() == lastClickItem.Mavatmua?.ToUpper());
+        selectedVatmua = item?.Tenvat ?? string.Empty;
+    }
+    private void ChangedVatban()
+    {
+
+        if (lastClickItem == null || vats == null)
+        {
+            selectedVatban = string.Empty;
+        }
+
+        var item = vats.FirstOrDefault(n => n.Mavat?.ToUpper() == lastClickItem.Mavatban?.ToUpper());
+        selectedVatban = item?.Tenvat ?? string.Empty;
+    }
+    private void addBarcode()
+    {
+        lastClickItem.Barcode += newBarcode + ";";
+        lastClickItemBarcodeList = new List<string>(lastClickItem.Barcode.Split(new string[] { ";" }, StringSplitOptions.RemoveEmptyEntries));
+    }
+    private void Rowclick(DataGridRowClickEventArgs<Mathang> Args)
+    {
+        lastClickItem = Args.Item;
+        ChangedLastClickItem();
+    }
+    private void ChangedLastClickItem() 
+    {
+        ChangedNCC();
+        ChangedNganhhang();
+        ChangedNhomhang();
+        ChangedDonvitinh();
+        ChangedVatban();
+        ChangedVatmua();
+        newBarcode = "";
+        lastClickItemBarcodeList = new List<string>((lastClickItem.Barcode ?? "").Split(new string[] { ";" }, StringSplitOptions.RemoveEmptyEntries));
+    }
+    #region Search mode
+    private void changedSearchMode()
+    {
+        LocalSearchText = "";
+        matHangs = matHangsBackup;
+    }
+    private void searchByTenNganhhang()
+    {
+        if (string.IsNullOrEmpty(LocalSearchText))
+        {
+            matHangs = matHangsBackup;
+            return;
+        }
+        var filterNganhhang = nganhHangs.Where(x => x.Tennganh.ToUpper().Contains(LocalSearchText.ToUpper())).ToList();
+        matHangs = matHangsBackup.Where(x => filterNganhhang.Any(n => n.Manganh == x.Manganh)).ToList();
+    }
+    private void searchByTenNhomhang()
+    {
+        if (string.IsNullOrEmpty(LocalSearchText))
+        {
+            matHangs = matHangsBackup;
+            return;
+        }
+        var filterNhomhang = nhomHangs.Where(x => x.Tennhomhang.ToUpper().Contains(LocalSearchText.ToUpper())).ToList();
+        matHangs = matHangsBackup.Where(x => filterNhomhang.Any(n => n.Manhomhang == x.Manhomhang)).ToList();
+    }
+    private void searchByMaNCC()
+    {
+        if (string.IsNullOrEmpty(LocalSearchText))
+        {
+            matHangs = matHangsBackup;
+            return;
+        }
+        matHangs = matHangsBackup.Where(x => x.Makhachhang.ToUpper().Contains(LocalSearchText.ToUpper())).ToList();
+    }
+    private void searchByTenNCC()
+    {
+        if (string.IsNullOrEmpty(LocalSearchText))
+        {
+            matHangs = matHangsBackup;
+            return;
+        }
+        var filterNCC = khachHangs.Where(x => x.Tenkhachhang.ToUpper().Contains(LocalSearchText.ToUpper())).ToList();
+        matHangs = matHangsBackup.Where(x => filterNCC.Any(n => n.Makhachhang == x.Makhachhang)).ToList();
+    }
+    private void searchByTensp()
+    {
+        if (string.IsNullOrEmpty(LocalSearchText))
+        {
+            matHangs = matHangsBackup;
+            return;
+        }
+        matHangs = matHangsBackup.Where(x => x.Tendaydu.ToUpper().Contains(LocalSearchText.ToUpper())).ToList();
+    }
+    private void searchByMasp()
+    {
+        if (string.IsNullOrEmpty(LocalSearchText))
+        {
+            matHangs = matHangsBackup;
+            return;
+        }
+        matHangs = matHangsBackup.Where(x => x.Masieuthi.ToUpper().Contains(LocalSearchText.ToUpper())).ToList();
+    }
+    private void searchByBarcode()
+    {
+        if (string.IsNullOrEmpty(LocalSearchText))
+        {
+            matHangs = matHangsBackup;
+            return;
+        }
+        var barcodeFilter = barCodes.Where(x => x.Barcode1.Contains(LocalSearchText)).ToList();
+        
+        matHangs = matHangsBackup.Where(x => barcodeFilter.Any(b => b.Masieuthi == x.Masieuthi && b.Madonvi == x.Madonvi)).ToList();
+    }
+    private async Task<IEnumerable<string>> searchByMaNCCDetailView(string value, CancellationToken token)
+    {
+        // Để delay 0.5s để giảm tải
+        await Task.Delay(500, token);
+
+        // Nếu không có gì nhập vào trả về danh sách rỗng
+        if (string.IsNullOrEmpty(value))
+            return Enumerable.Empty<string>();
+        return khachHangs.Where(x => x.Makhachhang.Contains(value, StringComparison.InvariantCultureIgnoreCase)).Select(x => x.Makhachhang);
+    }
+    private async Task<IEnumerable<string>> searchByMaNganhhangDetailView(string value, CancellationToken token)
+    {
+        // Để delay 0.5s để giảm tải
+        await Task.Delay(500, token);
+
+        // Nếu không có gì nhập vào trả về danh sách rỗng
+        if (string.IsNullOrEmpty(value))
+            return Enumerable.Empty<string>();
+        return nganhHangs.Where(x => x.Manganh.Contains(value, StringComparison.InvariantCultureIgnoreCase)).Select(x => x.Manganh);
+    }
+    private async Task<IEnumerable<string>> searchByMaNhomhangDetailView(string value, CancellationToken token)
+    {
+        // Để delay 0.5s để giảm tải
+        await Task.Delay(500, token);
+
+        // Nếu không có gì nhập vào trả về danh sách rỗng
+        if (string.IsNullOrEmpty(value))
+            return Enumerable.Empty<string>();
+        return nhomHangs.Where(x => x.Manhomhang.Contains(value, StringComparison.InvariantCultureIgnoreCase)).Select(x => x.Manhomhang);
+    }
+    private async Task<IEnumerable<string>> searchByMaVatDetailView(string value, CancellationToken token)
+    {
+        // Để delay 0.5s để giảm tải
+        await Task.Delay(500, token);
+
+        // Nếu không có gì nhập vào trả về danh sách rỗng
+        if (string.IsNullOrEmpty(value))
+            return Enumerable.Empty<string>();
+        return vats.Where(x => x.Mavat.Contains(value, StringComparison.InvariantCultureIgnoreCase)).Select(x => x.Mavat);
+    }
+    #endregion
+
+    private async Task OpenDialog()
+    {
+        var options = new DialogOptions { };
+        var dialog = DialogService.Show<BarcodeDialog>("Quét mã vạch", options);
+        var result = await dialog.Result;
+        if (result != null)
+        {
+            var barcodeResult = result?.Data?.ToString();
+            if (!string.IsNullOrEmpty(barcodeResult))
+            {
+                LocalSearchText = barcodeResult;
+            }
+        }
+    }
+    #endregion
+}

@@ -1,0 +1,303 @@
+﻿@page "/Nghiepvu/Danhsachphieunhaphang/phieunhapmua"
+@using System.Globalization
+@using DBDATA.Models
+@using MUDTEMPLATE.DBData
+@using Microsoft.AspNetCore.Authorization
+
+@attribute [Authorize]
+
+@inject IConfiguration _config
+@inject ISnackbar Snackbar
+@inject DBDATA.Context.DATAContext DBct
+@inject IDialogService DialogService
+
+<PageTitle>Danh sách phiếu nhập mua</PageTitle>
+
+<div style="font-size:16px">
+<MudPaper Class="py-2 px-2 mt-2" >
+    <MudGrid Justify="Justify.FlexStart" Spacing="1">
+        <MudItem xs="6" sm="3" lg="2">
+            <MudDatePicker Label="Từ ngày" Margin="Margin.Dense" Culture="@GetVietNamCulture()" @bind-Date="tungay" Variant="Variant.Outlined" Color="Color.Success" />
+        </MudItem>
+        <MudItem xs="6" sm="3" lg="2">
+            <MudDatePicker Label="Đến ngày" Margin="Margin.Dense" Culture="@GetVietNamCulture()" @bind-Date="denngay" Variant="Variant.Outlined" Color="Color.Secondary" />
+        </MudItem>
+        <MudHidden Breakpoint="Breakpoint.LgAndDown">
+            <MudItem xs="6">
+                <MudSpacer></MudSpacer>
+            </MudItem>
+        </MudHidden>
+        
+        <MudItem>
+            <MudButton Variant="Variant.Filled" FullWidth Class="my-1" StartIcon="@Icons.Material.Filled.Search" OnClick="Timkiem" Color="Color.Primary">Tìm kiếm</MudButton>
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+<MudPaper Class="mt-2">
+<MudMenu Class="d-block" LockScroll="true" PositionAtCursor="true" ActivationEvent="MouseEvent.RightClick">
+    <ActivatorContent>
+        <MudTable Dense="true" Class="mt-3" Bordered Height="465px"
+                    ReadOnly="false" HeaderClass="pa-1" Items="dt.Select()"
+                    T="DataRow" MultiSelection="false" RowClass="pa-0 cursor-pointer" Hover="true" Breakpoint="Breakpoint.None"
+                    RowClassFunc="@SelectRow" @bind-SelectedItem="@selectedItem" HorizontalScrollbar="true">
+            <ToolBarContent>
+                <MudText Typo="Typo.h6">Danh sách phiếu nhập mua</MudText>
+            </ToolBarContent>
+            <HeaderContent>
+                <MudTh Style="text-align:center; white-space:nowrap;"> Ngày hạch toán </MudTh>
+                <MudTh Style="text-align:center; white-space:nowrap;"> Số giao dịch </MudTh>
+                <MudTh Style="text-align:center; white-space:nowrap;"> Kho hàng </MudTh>
+                <MudTh Style="text-align:center; white-space:nowrap;"> Nhà cung cấp </MudTh>
+                <MudTh Style="text-align:center; white-space:nowrap;"> Tên nhà cung cấp </MudTh>
+                <MudTh Style="text-align:center; white-space:nowrap;"> Tiền hàng </MudTh>
+                <MudTh Style="text-align:center; white-space:nowrap;"> Tiền chiết khấu </MudTh>
+                <MudTh Style="text-align:center; white-space:nowrap;"> Tiền thuế GTGT </MudTh>
+                <MudTh Style="text-align:center; white-space:nowrap;"> Thành tiền </MudTh>
+                <MudTh Style="text-align:center; white-space:nowrap;"> Nội dung </MudTh>
+                <MudTh Style="text-align:center; white-space:nowrap;"> Ngày tạo </MudTh>
+                <MudTh Style="text-align:center; white-space:nowrap;"> Ngày hóa đơn </MudTh>
+                <MudTh Style="text-align:center; white-space:nowrap;"> Người lập phiếu </MudTh>
+                <MudTh Style="text-align:center; white-space:nowrap;"> Người sửa </MudTh>
+                <MudTh Style="text-align:center; white-space:nowrap;"> Trạng thái </MudTh>
+                <MudTh></MudTh>
+            </HeaderContent>
+    
+            <RowTemplate>
+                    <MudTd DataLabel="Ngày hạch toán" Class="p-1" Style="text-align:center; white-space:nowrap;"> @(DateTime.Parse(context["Ngayphatsinh"].ToString()).ToString("dd/MM/yyyy"))</MudTd>
+                    <MudTd DataLabel="Số giao dịch" Style="text-align:center; white-space:nowrap;"> @context["Magiaodichpk"].ToString()</MudTd>
+                    <MudTd DataLabel="Kho hàng" Class="p-1" Style="padding:9px; text-align:left; white-space:nowrap;"> @context["Tenkhohang"].ToString()</MudTd>
+                    <MudTd DataLabel="Nhà cung cấp" Class="p-1" Style="padding:8px; text-align:left; white-space:nowrap;"> @context["Makhachhang"].ToString()</MudTd>
+                    <MudTd DataLabel="Tên nhà cung cấp" Class="p-1" Style="text-align:left; white-space:nowrap;"> @context["Tenkhachhang"].ToString()</MudTd>
+                    <MudTd DataLabel="Tiền hàng" Class="p-1" Style="text-align:right; white-space:nowrap;"> @(string.IsNullOrEmpty(context["Tienhang"].ToString()) ? "0" : Convert.ToDecimal(context["Tienhang"]).ToString("#,##0"))</MudTd>
+                    <MudTd DataLabel="Tiền chiết khấu" Class="p-1" Style="text-align:right; white-space:nowrap;"> @(string.IsNullOrEmpty(context["Tienck"].ToString()) ? "0" : Convert.ToDecimal(context["Tienck"]).ToString("#,##0"))</MudTd>
+                    <MudTd DataLabel="Tiền thuế GTGT" Class="p-1" Style="text-align:right; white-space:nowrap;"> @(string.IsNullOrEmpty(context["Tienvat"].ToString()) ? "0" : Convert.ToDecimal(context["Tienvat"]).ToString("#,##0"))</MudTd>
+                    <MudTd DataLabel="Thành tiền" Class="p-1" Style="text-align:right; white-space:nowrap;"> @(string.IsNullOrEmpty(context["Thanhtien"].ToString()) ? "0" : Convert.ToDecimal(context["Thanhtien"]).ToString("#,##0"))</MudTd>
+                    <MudTd DataLabel="Nội dung" Class="p-1" Style="padding:9px; text-align:left; white-space:nowrap;"> @context["Ghichu"].ToString()</MudTd>
+                    <MudTd DataLabel="Ngày tạo" Class="p-1" Style="text-align:center; white-space:nowrap;"> @(DateTime.Parse(context["Ngaytao"].ToString()).ToString("dd/MM/yyyy"))</MudTd>
+                    <MudTd DataLabel="Ngày hóa đơn" Class="p-1" Style="text-align:center; white-space:nowrap;"> @(DateTime.Parse(context["Ngayhoadon"].ToString()).ToString("dd/MM/yyyy"))</MudTd>
+                    <MudTd DataLabel="Người lập phiếu" Class="p-1" Style="text-align:left; white-space:nowrap;"> @context["Tendangnhap"].ToString()</MudTd>
+                    <MudTd DataLabel="Người sửa" Class="p-1" Style="text-align:left; white-space:nowrap;"> @context["Tendangnhapsua"].ToString()</MudTd>
+                    <MudTd DataLabel="Trạng thái" Class="p-1" Style="text-align:center; white-space:nowrap;"> @context["Trangthai"].ToString()</MudTd>
+                    <MudTd>
+                            <MudMenu OpenChanged="@(isOpen => selectedItem = isOpen ? context : selectedItem)" Size="Size.Small" Icon="@Icons.Material.Filled.MoreVert"
+                                     AriaLabel="Open user menu">
+                                <MudMenuItem><MudButton Style="white-space:nowrap" OnClick="() => xemdon()">Xem đơn</MudButton></MudMenuItem>
+                                <MudMenuItem><MudButton Style="white-space:nowrap" OnClick="() => xemAnh()">Xem ảnh</MudButton></MudMenuItem>
+                            </MudMenu>
+                    </MudTd>
+            </RowTemplate>
+        </MudTable>
+    </ActivatorContent>
+    <ChildContent>
+        <MudMenuItem OnClick="xemAnh" Icon="@Icons.Material.Filled.Image">Xem ảnh</MudMenuItem>
+    </ChildContent>
+</MudMenu>
+</MudPaper>
+<MudDialog @bind-Visible="_visibleDialog">
+    <TitleContent>
+        @if (imgs.Count > 0)
+        {
+            <MudText Typo="Typo.h6">Bấm vào hình ảnh để xem chi tiết</MudText>
+        }
+    </TitleContent>
+    <DialogContent>
+        @if (imgs.Count > 0)
+        {
+            <MudCarousel TData="MudImage" Class="mud-width-full" Style="height: 60vh" AutoCycle="false">
+                @foreach (var img in imgs)
+                {
+                    <MudCarouselItem Class="d-flex" Style="justify-content:center; align-content:center; height:100%">
+                        <MudLink Target="_blank" Href="@img.path"><MudImage Src="@img.path" Fluid="true" ObjectFit="ObjectFit.ScaleDown" Alt="@img.name" Elevation="25" Class="rounded-lg" /></MudLink>
+                    </MudCarouselItem>
+                }
+            </MudCarousel>
+        }
+        @if (imgs.Count == 0)
+        {
+            <MudItem Class="d-flex" Style="justify-content:center; align-content:center; height:100%">
+                <MudImage Src="Images/noimage.png" Fluid="true" ObjectFit="ObjectFit.Cover" Alt="Không có ảnh" Elevation="25" Class="rounded-lg" />
+            </MudItem>
+
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="() => {_visibleDialog=false;}" StartIcon="@Icons.Material.Rounded.Cancel" Variant="Variant.Filled" Color="Color.Warning">Đóng</MudButton>
+        <MudFileUpload Class="m-0 d-flex px-4" T="IReadOnlyList<IBrowserFile>" Accept=".jpg, .png" FilesChanged="UploadFiles">
+            <ActivatorContent>
+                <MudButton StartIcon="@Icons.Material.Rounded.FileUpload" Variant="Variant.Filled" Color="Color.Primary">Thêm ảnh</MudButton>
+            </ActivatorContent>
+        </MudFileUpload>
+    </DialogActions>
+</MudDialog>
+</div>
+@code {
+    #region Khởi tạo biến
+    DateTime? tungay = DateTime.Today;
+    DateTime? denngay = DateTime.Today;
+
+    MudMenu? contextMenu;
+
+    IList<IBrowserFile> files = new List<IBrowserFile>();
+
+    List<imageInfo> imgs = new();
+
+    int selectedRowNumber = -1;
+
+    bool _visibleDialog = false;
+
+    DataRow? selectedItem;
+
+    private bool _loading = false;
+
+    private DataTable dt = new DataTable();
+
+    string imgsFolderPath = "";
+
+    #endregion
+
+    public CultureInfo GetVietNamCulture()
+    {
+        var culture = new CultureInfo("vi-VN");
+        DateTimeFormatInfo formatInfo = culture.DateTimeFormat;
+        formatInfo.AbbreviatedDayNames = new[] { "T2", "T3", "T4", "T5", "T6", "T7", "CN" };
+        formatInfo.DayNames = new[] { "Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "Chủ Nhật" };
+        var monthNames = new[]
+        {"Tháng 1", "Tháng 2", "Tháng 3", "Tháng 4", "Tháng 5", "Tháng 6", "Tháng 7", "Tháng 8", "Tháng 9", "Tháng 10", "Tháng 11", "Tháng 12", "",};
+        formatInfo.AbbreviatedMonthNames = formatInfo.AbbreviatedMonthGenitiveNames = formatInfo.MonthNames = monthNames;
+        formatInfo.ShortDatePattern = "dd/MM/yyyy";
+        formatInfo.LongDatePattern = "dddd, dd/MMMM/yyyy";
+        formatInfo.FirstDayOfWeek = DayOfWeek.Sunday;
+        DB.Set_Connect(_config.GetConnectionString("DefaultConnection"));
+        return culture;
+    }
+
+    public async void Timkiem()
+    {
+        _loading = true;
+        DB.Set_Connect(_config.GetConnectionString("DefaultConnection"));
+        dt = DB.Fill_GiaodichKhohangByTungayDenngay("10", "0003", "N_MUA", tungay ?? DateTime.Today, denngay ?? DateTime.Today);
+        _loading = false;
+        CultureInfo culture = CultureInfo.GetCultureInfo("vi-VN");
+        Console.WriteLine(culture.DateTimeFormat.ShortDatePattern);
+        Console.WriteLine(culture.DateTimeFormat.MonthNames.FirstOrDefault());
+        StateHasChanged();
+    }
+
+    async Task xemdon()
+    {
+        var option = new DialogOptions();
+        option.FullWidth = true;
+        option.CloseButton = false;
+        option.NoHeader = true;
+        option.MaxWidth = MaxWidth.ExtraLarge;
+        option.CloseOnEscapeKey = true;
+        option.FullScreen = true;
+        // var dialog = await DialogService.ShowAsync<SelectKhachhangComponent>("Khách hàng", option);
+        // var result = await dialog.Result;
+        // if (!result.Canceled)
+        // {
+        //     khachang = (ApplicationUser)result.Data;
+        // }
+        StateHasChanged();
+    }
+
+    public string SelectRow(DataRow rowContent, int rowNumber)
+    {
+        if (selectedItem != null && selectedItem.Equals(rowContent))
+        {
+            selectedRowNumber = rowNumber;
+            return "selected";
+        }
+        else
+        {
+            return string.Empty;
+        }
+    }
+
+    public void xemAnh()
+    {
+        if (dt.Rows.Count == 0)
+            Snackbar.Add("Chưa có dữ liệu trên bảng", Severity.Warning, config => { config.VisibleStateDuration = 1000; });
+        if (selectedItem == null)
+            Snackbar.Add("Chưa có dòng nào được chọn", Severity.Warning, config => { config.VisibleStateDuration = 1000; });
+        else
+        {
+            imgs = new();
+            imgsFolderPath = "wwwroot/Images/" + (DateTime.Parse(selectedItem["Ngaytao"].ToString()).ToString("dd-MM-yyyy")) + "/" + selectedItem["Magiaodichpk"].ToString();
+            if (!Directory.Exists(imgsFolderPath))
+            {
+                _visibleDialog = true;
+                return;
+            }
+            string[] files = Directory.GetFiles(imgsFolderPath);
+            foreach (var file in files)
+            {
+                var imageInfo = new imageInfo
+                    {
+                        name = Path.GetFileName(file),
+                        path = "Images/" + (DateTime.Parse(selectedItem["Ngaytao"].ToString()).ToString("dd-MM-yyyy")) + "/" + selectedItem["Magiaodichpk"].ToString() + "/" + Path.GetFileName(file)
+                    };
+                imgs.Add(imageInfo);
+            }
+            _visibleDialog = true;
+            return;
+        }
+        return;
+    }
+
+    public async Task UploadFiles(IReadOnlyList<IBrowserFile> files)
+    {
+        try
+        {
+            var uploadPath = "wwwroot/Images/" + (DateTime.Parse(selectedItem["Ngaytao"].ToString()).ToString("dd-MM-yyyy")) + "/" + selectedItem["Magiaodichpk"].ToString();
+            if (!Directory.Exists(uploadPath))
+            {
+                Directory.CreateDirectory(uploadPath);
+            }
+
+            foreach (var file in files)
+            {
+                var filePath = Path.Combine(uploadPath, file.Name);
+                using (var fileStream = new FileStream(filePath, FileMode.Create))
+                {
+                    await file.OpenReadStream().CopyToAsync(fileStream);
+                }
+            }
+            _visibleDialog = false;
+            xemAnh();
+            Snackbar.Add("Đã thêm ảnh", Severity.Success, config => { config.VisibleStateDuration = 1000; });
+        }
+        catch (Exception e)
+        {
+            Snackbar.Add("Gặp lỗi khi thêm ảnh: " + e.Message, Severity.Error, config => { config.VisibleStateDuration = 1000; });
+        }
+    }
+
+    public class imageInfo
+    {
+        public string path { get; set; }
+        public string name { get; set; }
+    }
+}
+
+@*Dòng nào được chọn thì áp dụng cái này*@
+<style>
+    .selected {
+        background-color: #1E88E5 !important;
+    }
+
+        .selected > td {
+            color: white !important;
+        }
+
+            .selected > td .mud-input {
+                color: white !important;
+            }
+
+    .center-image {
+        display: block;
+        margin-left: auto;
+        margin-right: auto;
+        max-width: 100%;
+    }
+</style>

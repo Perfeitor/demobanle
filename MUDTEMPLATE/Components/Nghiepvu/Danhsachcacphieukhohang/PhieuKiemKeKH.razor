@@ -1,0 +1,104 @@
+﻿@page "/Nghiepvu/Danhsachphieunhaphang/phieukiemkeKH"
+@using System.Globalization
+@using DBDATA.Models
+@using MUDTEMPLATE.DBData
+@inject IConfiguration _config
+
+@inject DBDATA.Context.DATAContext DBct
+
+<MudPaper Class="pt-2 px-2 mt-2">
+    <MudGrid Justify="Justify.FlexStart" Spacing="1">
+        <MudItem xs="6" sm="3" lg="2">
+            <MudDatePicker Label="Từ ngày" Margin="Margin.Dense" Culture="@GetVietNamCulture()" @bind-Date="tungay" Variant="Variant.Outlined" Color="Color.Success" />
+        </MudItem>
+        <MudItem xs="6" sm="3" lg="2">
+            <MudDatePicker Label="Đến ngày" Margin="Margin.Dense" Culture="@GetVietNamCulture()" @bind-Date="denngay" Variant="Variant.Outlined" Color="Color.Secondary" />
+        </MudItem>
+        <MudHidden Breakpoint="Breakpoint.LgAndDown">
+            <MudItem xs="6">
+                <MudSpacer></MudSpacer>
+            </MudItem>
+        </MudHidden>
+
+        <MudItem>
+            <MudButton Variant="Variant.Filled" FullWidth Class="my-1" StartIcon="@Icons.Material.Filled.Search" OnClick="Timkiem" Color="Color.Primary">Tìm kiếm</MudButton>
+        </MudItem>
+    </MudGrid>
+</MudPaper>
+
+<MudDataGrid Dense T="Kiemke" Class="mt-3" Items="kiemkekh" ReadOnly="false" MultiSelection="true"
+             SortMode="SortMode.Multiple" Filterable="true" Hideable="true" Bordered="true" RowsPerPage="10">
+    <ToolBarContent>
+        <MudText Typo="Typo.h6">Danh sách phiếu kiểm kê kho hàng</MudText>
+        <MudSpacer />
+    </ToolBarContent>
+    <Columns>
+        <PropertyColumn Sortable="false" Filterable="false" Property="x => x.Ngayphatsinh" Title="Ngày phát sinh" IsEditable="false" Culture="@(new CultureInfo("vi-VN"))" />
+        <PropertyColumn Sortable="false" Filterable="false" Property="x => x.Magiaodichpk" Title="Tổng số lượng" IsEditable="false"  />
+        <PropertyColumn Sortable="false" Filterable="false" Property="x => x.Ghichu" Title="Ghi chú" IsEditable="false" />
+        <PropertyColumn Sortable="false" Filterable="false" Property="x => x.Makhohang" Title="Kho hàng" IsEditable="false" />
+        <PropertyColumn Sortable="false" Filterable="false" Property="x => x.Manganhhang" Title="Ngành hàng" IsEditable="false" />
+        <PropertyColumn Sortable="false" Filterable="false" Property="x => x.Manhomhang" Title="Nhóm hàng" IsEditable="false" />
+        <PropertyColumn Sortable="false" Filterable="false" Property="x => x.Makehang" Title="Kệ hàng" IsEditable="false" />
+        <PropertyColumn Sortable="false" Filterable="false" Property="x => x.Mavtu" Title="Sản phẩm" IsEditable="false" />
+        <PropertyColumn Sortable="false" Filterable="false" Property="x => x.Mavuviecthua" Title="Vụ việc thừa" IsEditable="false" />
+        <PropertyColumn Sortable="false" Filterable="false" Property="x => x.Mavuviecthieu" Title="Vụ việc thiếu" IsEditable="false" />
+        <TemplateColumn CellClass="d-flex justify-end" Sortable="false" Filterable="false" IsEditable="false">
+            <CellTemplate>
+                <MudStack Row>                
+                    <MudButton Size="@Size.Small" Variant="@Variant.Filled" Color="@Color.Primary">Xem đơn</MudButton>
+                </MudStack>
+            </CellTemplate>
+        </TemplateColumn>
+    </Columns>
+    <PagerContent>
+        <MudDataGridPager T="Kiemke" />
+    </PagerContent>
+</MudDataGrid>
+
+@code {
+
+    List<Kiemke> kiemkekh = new List<Kiemke>();
+
+    DateTime? tungay = DateTime.Today;
+    DateTime? denngay = DateTime.Today;
+
+    private bool _loading = false;
+
+    private DataTable dt = new DataTable();
+
+    // protected override async Task OnInitializedAsync()
+    // {
+    //     _loading = true;
+    //     state.OnChange += StateHasChanged;
+    //     _loading = false;
+    // }
+
+    public async void Timkiem()
+    {
+        _loading = true;
+        //mã đơn vị: 0003
+
+        // kiemkekh = await state.GetDonhang(tungay ?? DateTime.Today, denngay ?? DateTime.Today, "0003", "NV0072");
+        _loading = false;
+        CultureInfo culture = CultureInfo.GetCultureInfo("vi-VN");
+        Console.WriteLine(culture.DateTimeFormat.ShortDatePattern);
+        Console.WriteLine(culture.DateTimeFormat.MonthNames.FirstOrDefault());
+        StateHasChanged();
+    }
+    public CultureInfo GetVietNamCulture()
+    {
+        var culture = new CultureInfo("vi-VN");
+        DateTimeFormatInfo formatInfo = culture.DateTimeFormat;
+        formatInfo.AbbreviatedDayNames = new[] { "T2", "T3", "T4", "T5", "T6", "T7", "CN" };
+        formatInfo.DayNames = new[] { "Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "Chủ Nhật" };
+        var monthNames = new[]
+        {"Tháng 1", "Tháng 2", "Tháng 3", "Tháng 4", "Tháng 5", "Tháng 6", "Tháng 7", "Tháng 8", "Tháng 9", "Tháng 10", "Tháng 11", "Tháng 12", "",};
+        formatInfo.AbbreviatedMonthNames = formatInfo.AbbreviatedMonthGenitiveNames = formatInfo.MonthNames = monthNames;
+        formatInfo.ShortDatePattern = "dd/MM/yyyy";
+        formatInfo.LongDatePattern = "dddd, dd/MMMM/yyyy";
+        formatInfo.FirstDayOfWeek = DayOfWeek.Sunday;
+        DB.Set_Connect(_config.GetConnectionString("DefaultConnection"));
+        return culture;
+    }
+}

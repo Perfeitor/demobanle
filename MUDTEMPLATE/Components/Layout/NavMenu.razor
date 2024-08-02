@@ -1,0 +1,96 @@
+﻿@implements IDisposable
+@inject NavigationManager NavigationManager
+<MudNavMenu>
+	<AuthorizeView>
+		<Authorized>
+            <MudNavGroup Title="Hệ thống" Icon="@Icons.Material.Filled.Apps">
+                <MudNavLink Href="/Hethong/Taikhoansudung" Icon="@Icons.Material.Filled.AccountBox">Tài khoản sử dụng</MudNavLink>
+            </MudNavGroup>
+
+            <MudNavGroup Title="Báo cáo" Icon="@Icons.Material.Filled.Article">
+                <MudNavGroup Title="Báo cáo xuất hàng" Icon="@Icons.Material.Filled.AssignmentTurnedIn">
+                    <MudNavLink Href="/Baocao/Baocaoxuathang/Tonghopbanle" Icon="@Icons.Material.Filled.Assignment">Tổng hợp bán lẻ</MudNavLink>
+                </MudNavGroup>
+            </MudNavGroup>
+
+            <MudNavGroup Title="Danh mục" Icon="@Icons.Material.Filled.Folder" IconColor="Color.Warning" Expanded="false">
+                <MudNavGroup Title="Vật tư hàng hoá" Icon="@Icons.Material.Filled.Folder" IconColor="Color.Warning" Expanded="false">
+                    <MudNavLink Href="/Danhmuc/Vattuhanghoa/Nganhhang" Icon="@Icons.Material.Filled.AllInbox">Ngành hàng</MudNavLink>
+                    <MudNavLink Href="/Danhmuc/Vattuhanghoa/QuanlyNhomhang" Icon="@Icons.Material.Filled.AllInbox">Nhóm hàng</MudNavLink>
+                    <MudNavLink Href="/Danhmuc/Vattuhanghoa/Khohang" Icon="@Icons.Material.Filled.AllInbox">Kho hàng</MudNavLink>
+                    <MudNavLink Href="/Danhmuc/Vattuhanghoa/Danhsachmathang" Icon="@Icons.Material.Filled.FormatListBulleted">Danh sách mặt hàng</MudNavLink>                  
+                </MudNavGroup>
+            </MudNavGroup>
+
+            <MudNavGroup Title="Nghiệp vụ" Icon="@Icons.Material.Filled.Folder" IconColor="Color.Warning">
+
+               @*  <MudNavGroup Title="Danh sách phiếu kinh doanh" Icon="@Icons.Material.Filled.Folder" IconColor="Color.Warning">
+                    <MudNavLink Href="" Icon="@Icons.Material.Filled.Notes" IconColor="Color.Info">Phiếu đặt hàng</MudNavLink>
+                    <MudNavLink Href="/Nghiepvu/Danhsachphieunhaphang/Giaodichbanle" Icon="@Icons.Material.Filled.Notes" IconColor="Color.Info">Phiếu xuất bán lẻ</MudNavLink>
+                    <MudNavLink Href="/Nghiepvu/Danhsachphieunhaphang/phieuxuatbanledodang" Icon="@Icons.Material.Filled.Notes" IconColor="Color.Info">Phiếu xuất bán lẻ dở dang</MudNavLink>
+                    <MudNavLink Href="" Icon="@Icons.Material.Filled.Notes" IconColor="Color.Info">Phiếu xuất bán lẻ giảm hàng</MudNavLink>
+                </MudNavGroup> *@
+
+                <MudNavGroup Title="Danh sách phiếu nhập hàng" Icon="@Icons.Material.Filled.Folder" IconColor="Color.Warning">
+                    <MudNavLink Href="/Nghiepvu/Danhsachphieunhaphang/phieunhapmua" Icon="@Icons.Material.Filled.Notes" IconColor="Color.Info">Phiếu nhập mua</MudNavLink>
+                    <MudNavLink Href="/Nghiepvu/Danhsachphieunhaphang/phieunhapnoibo" Icon="@Icons.Material.Filled.Notes" IconColor="Color.Info">Phiếu nhập nội bộ</MudNavLink>
+                    <MudNavLink Href="/Nghiepvu/Danhsachphieunhaphang/phieunhapbanletralai" Icon="@Icons.Material.Filled.Notes" IconColor="Color.Info">Phiếu nhập bán lẻ trả lại</MudNavLink>
+                    @* <MudNavLink Href="/Nghiepvu/Danhsachphieunhaphang/Phieubanbuontralai" Icon="@Icons.Material.Filled.Notes" IconColor="Color.Info"> Phiếu nhập bán buôn trả lại</MudNavLink> *@
+                    <MudNavLink Href="/Nghiepvu/Danhsachphieunhaphang/phieunhapkiemke" Icon="@Icons.Material.Filled.Notes" IconColor="Color.Info"> Phiếu nhập kiểm kê</MudNavLink>
+                </MudNavGroup>
+
+                @* <MudNavGroup Title="Danh sách phiếu xuất hàng" Icon="@Icons.Material.Filled.Folder" IconColor="Color.Warning">
+                    <MudNavLink Href="" Icon="@Icons.Material.Filled.Notes" IconColor="Color.Info">Phiếu xuất hàng chuyển kho</MudNavLink>
+                    <MudNavLink Href="" Icon="@Icons.Material.Filled.Notes" IconColor="Color.Info">Phiếu xuất trả nhà cung cấp</MudNavLink>
+                    <MudNavLink Href="" Icon="@Icons.Material.Filled.Notes" IconColor="Color.Info">Phiếu xuất hàng nội bộ</MudNavLink>
+                    <MudNavLink Href="" Icon="@Icons.Material.Filled.Notes" IconColor="Color.Info">Phiếu xuất bán buôn</MudNavLink>
+                    <MudNavLink Href="" Icon="@Icons.Material.Filled.Notes" IconColor="Color.Info">Phiếu xuất kiểm kê</MudNavLink>
+                </MudNavGroup>
+
+                <MudNavGroup Title="Danh sách phiếu tài chính" Icon="@Icons.Material.Filled.Folder" IconColor="Color.Warning">
+                    <MudNavLink Href="" Icon="@Icons.Material.Filled.Notes" IconColor="Color.Info">Phiếu thu/chi</MudNavLink>
+                    <MudNavLink Href="" Icon="@Icons.Material.Filled.Notes" IconColor="Color.Info">Phiếu báo có/báo nợ</MudNavLink>
+                    <MudNavLink Href="" Icon="@Icons.Material.Filled.Notes" IconColor="Color.Info">Phiếu kế toán</MudNavLink>
+                    <MudNavLink Href="" Icon="@Icons.Material.Filled.Notes" IconColor="Color.Info">Phiếu đề nghị thanh toán</MudNavLink>
+                </MudNavGroup> *@
+
+                <MudNavGroup Title="Danh sách các phiếu kho hàng" Icon="@Icons.Material.Filled.Folder" IconColor="Color.Warning">
+                    <MudNavLink Href="/Nghiepvu/Danhsachphieunhaphang/phieukiemkeKH" Icon="@Icons.Material.Filled.Notes" IconColor="Color.Info">Phiếu kiểm kê</MudNavLink>
+                </MudNavGroup>
+
+            </MudNavGroup>
+
+            @* <div class="nav-item px-3 p-1">
+                <form action="Account/Logout" method="post">
+                    <AntiforgeryToken />
+                    <input type="hidden" name="ReturnUrl" value="" />
+                    <MudButton ButtonType="ButtonType.Submit" Variant="Variant.Filled" EndIcon="@Icons.Material.Filled.Output" Color="Color.Primary">
+                        <span class="bi bi-arrow-bar-left-nav-menu" aria-hidden="true">Logout</span>
+                    </MudButton>
+                </form>
+            </div> *@
+
+		</Authorized>
+	</AuthorizeView>
+
+</MudNavMenu>
+@code {
+    private string? currentUrl;
+
+    protected override void OnInitialized()
+    {
+        currentUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+        NavigationManager.LocationChanged += OnLocationChanged;
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        currentUrl = NavigationManager.ToBaseRelativePath(e.Location);
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        NavigationManager.LocationChanged -= OnLocationChanged;
+    }
+}

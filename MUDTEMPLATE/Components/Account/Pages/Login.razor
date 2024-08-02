@@ -1,0 +1,110 @@
+﻿@page "/Account/Login"
+
+@using System.ComponentModel.DataAnnotations
+@using DBDATA.Models
+@using MUDTEMPLATE.Services
+@using Microsoft.AspNetCore.Authentication
+@using Microsoft.AspNetCore.Authentication.Cookies
+@using System.Security.Claims
+
+@inject INguoidungService nguoiDungService
+@inject NavigationManager _NavigationManager
+
+<div class="row">
+    <div class="col-lg-4 offset-lg-4 pt-4 pb border">
+        <EditForm Model="@Input" OnValidSubmit="LoginUser" FormName="LoginFormTest">
+            <DataAnnotationsValidator />
+            <div class="mb-3 text-center flex-column">
+                <h3>Đăng nhập hệ thống</h3>
+            </div>
+            <div class="mb-3">
+                <label>Tài khoản đăng nhập</label>
+                <InputText @bind-Value="Input.UserName" class="form-control"></InputText>
+                <ValidationMessage For="() => Input.UserName" />
+            </div>
+            <div class="mb-3">
+                <label>Mật khẩu</label>
+                <InputText type="password" @bind-Value="Input.Password" class="form-control"></InputText>
+                <ValidationMessage For="() => Input.Password" />
+            </div>
+            <div class="mb-3">
+                <label>Đơn vị trực thuộc</label>
+                <InputSelect @bind-Value="Input.Unit" class="form-control">
+                    @foreach (var u in Units)
+                    {
+                        <option value="@u.Madonvi">@u.Tendonvi</option>
+                    }
+                </InputSelect>
+                <ValidationMessage For="() => Input.Password" />
+            </div>
+            <div class="mb-3 text-center">
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {
+                    <span class="text-danger">@errorMessage</span>
+                }
+            </div>
+            <div class="mb-3 d-grid gap-2">
+                <button type="submit" class="btn btn-primary">Đăng nhập</button>
+            </div>
+        </EditForm>
+    </div>
+</div>
+
+
+
+@code {
+    public class LoginVM
+    {
+        [Required(ErrorMessage = "Hãy điền tên")]
+        public string? UserName { get; set; }
+        [Required(ErrorMessage = "Hãy điền mật khẩu")]
+        public string? Password { get; set; }
+        public string? Unit { get; set; }
+    }
+
+    public List<Donvi> Units = new();
+
+    [SupplyParameterFromForm]
+    public LoginVM Input { get; set; } = new();
+
+    private string? errorMessage;
+
+    [CascadingParameter]
+    public HttpContent httpContent { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var result = await nguoiDungService.GetAllDonvi();
+        Units = result;
+    }
+
+    public async Task LoginUser()
+    {
+        try
+        {
+            var user = await nguoiDungService.FindByInfo(Input.UserName, Input.Password, Input.Unit);
+            #region Test
+            if (user != null)
+            {
+                errorMessage = null;
+            }
+            else
+            {
+                errorMessage = "Thông tin sai";
+            }
+            #endregion
+            if (!await nguoiDungService.LoginAsync(Input.UserName, Input.Password, Input.Unit))
+            {
+                errorMessage = "Lỗi đăng nhập";
+            }
+        }
+        catch (Exception e)
+        {
+            errorMessage = "Đã xảy ra lỗi: (" + e.Message + ") trong quá trình đăng nhập. Vui lòng thử lại sau.";
+        }
+        if (string.IsNullOrEmpty(errorMessage))
+        {
+            _NavigationManager.NavigateTo("/auth");
+        }
+    }
+}

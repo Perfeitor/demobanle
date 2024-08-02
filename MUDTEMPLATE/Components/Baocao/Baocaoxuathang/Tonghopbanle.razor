@@ -1,0 +1,184 @@
+﻿@page "/Baocao/Baocaoxuathang/Tonghopbanle"
+
+@using DBDATA.Models
+@using MUDTEMPLATE.DBData
+@using MUDTEMPLATE.Services
+@using System.Configuration
+@using Microsoft.AspNetCore.Authorization
+
+@inject INguoidungService nguoidungService
+@inject IConfiguration _config
+
+@attribute [Authorize]
+
+@*Các trường Control có Spacing bằng 1*@
+<div style="font-size:16px">
+<MudPaper>
+    <MudItem xs="12" md="12">
+        <MudPaper Class="py-2 p-4" Style="height: 100%;">
+            <MudGrid>
+                <MudItem xs="8" md="10">
+                    <MudText Typo="Typo.h6"><b>Điều kiện lọc</b></MudText>
+                </MudItem>
+                @* <MudItem xs="4" md="2" Class="d-flex justify-content-end">
+                    <MudButton OnClick="OnExpandCollapseClick">@(_expanded ? "Thu gọn" : "Mở ra")</MudButton>
+                </MudItem> *@
+            </MudGrid>
+            <MudCollapse Expanded="true" Class="mt-2" >
+                <MudGrid Spacing="1">
+                    <MudItem xs="6" md="6">
+                        <MudDatePicker Label="Từ ngày" Margin="Margin.Dense" @bind-Date="@startDate" Variant="Variant.Outlined" Color="Color.Success" />
+                    </MudItem>
+                    <MudItem xs="6" md="6">
+                        <MudDatePicker Label="Đến ngày" Margin="Margin.Dense" @bind-Date="@endDate" Variant="Variant.Outlined" Color="Color.Secondary" />
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudSelect ShrinkLabel T="string" Label="Lọc theo kho" @bind-Text="@khoSelected" Variant="Variant.Outlined" Margin="Margin.Dense">
+                            <MudSelectItem T="string" Value="string.Empty">Tất cả</MudSelectItem>
+                            @foreach(var kho in khohangs)
+                            {
+                                <MudSelectItem T="string" Value="@kho.Makhohang">@kho.Tenkhohang</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudSelect T="int?" Label="Báo cáo" @bind-Value="@filter" Variant="Variant.Outlined" Margin="Margin.Dense">
+                            <MudSelectItem T="int?" Value="1">Theo người bán</MudSelectItem>
+                            <MudSelectItem T="int?" Value="3">Theo kho hàng</MudSelectItem>
+                        </MudSelect>
+                    </MudItem>
+                </MudGrid>
+                <MudItem xs="12" md="12" Class="pt-1">
+                    <MudButton OnClick="GetData" Variant="Variant.Filled" Color="Color.Primary" FullWidth="true">Xem báo cáo</MudButton>
+                </MudItem>
+            </MudCollapse>
+        </MudPaper>
+    </MudItem>
+</MudPaper>
+
+<MudPaper Class="mt-4">
+    <MudTable Bordered="true" Dense="true" CustomHeader="true" Items="@banleTable.Select()" T="DataRow" Breakpoint="Breakpoint.None" Loading="_loading" >
+        <ToolBarContent>
+            <MudText Typo="Typo.h6">Tổng hợp bán lẻ</MudText>
+        </ToolBarContent>
+        <HeaderContent>
+            <MudTHeadRow>
+                <MudTh Class="border p-1" Style="text-align:center; white-space:nowrap;" rowspan="2">STT</MudTh>
+                <MudTh Class="border p-1" Style="text-align:center; white-space:nowrap;" rowspan="2">Tên</MudTh>
+                <MudTh Class="border p-1" Style="text-align:center; white-space:nowrap;" rowspan="1" colspan="4">Tiền thanh toán</MudTh>
+                <MudTh Class="border p-1" Style="text-align:center; white-space:nowrap;" rowspan="1" colspan="3">Hình thức thanh toán</MudTh>
+            </MudTHeadRow>
+            <MudTHeadRow>
+                <MudTh Class="border p-1" Style="text-align:center; white-space:nowrap;" colspan="1">Tiền hàng</MudTh>
+                <MudTh Class="border p-1" Style="text-align:center; white-space:nowrap;" colspan="1">Tiền trả lại</MudTh>
+                <MudTh Class="border p-1" Style="text-align:center; white-space:nowrap;" colspan="1">Tiền CK</MudTh>
+                <MudTh Class="border p-1" Style="text-align:center; white-space:nowrap;" rowspan="1">Thực thu</MudTh>
+                <MudTh Class="border p-1" Style="text-align:center; white-space:nowrap;" rowspan="1">Tiền mặt</MudTh>
+                <MudTh Class="border p-1" Style="text-align:center; white-space:nowrap;" rowspan="1">Tiền thẻ</MudTh>
+                <MudTh Class="border p-1" Style="text-align:center; white-space:nowrap;" rowspan="1">Chuyển khoản</MudTh>
+            </MudTHeadRow>
+        </HeaderContent>
+        <RowTemplate>
+            <MudTd DataLabel="STT" Class="p-1" Style="text-align:center; white-space:nowrap;">@banleTable.Rows.IndexOf(context)</MudTd>
+            <MudTd DataLabel="Tên" Class="p-1" Style="white-space:nowrap;">@context["Ten"].ToString()</MudTd>
+            <MudTd DataLabel="Tiền bán" Class="p-1" Style="text-align:right; white-space:nowrap;">@(string.IsNullOrEmpty(context["Tienhang"].ToString()) ? "0" : Convert.ToDecimal(context["Tienhang"]).ToString("#,##0"))</MudTd>
+            <MudTd DataLabel="Tiền trả lại" Class="p-1" Style="text-align:right; white-space:nowrap;">@(string.IsNullOrEmpty(context["Thanhtientl"].ToString()) ? "0" : Convert.ToDecimal(context["Thanhtientl"]).ToString("#,##0"))</MudTd>
+            <MudTd DataLabel="Tiền CK" Class="p-1" Style="text-align:right; white-space:nowrap;">@(string.IsNullOrEmpty(context["Tienck"].ToString()) ? "0" : Convert.ToDecimal(context["Tienck"]).ToString("#,##0"))</MudTd>
+            <MudTd DataLabel="Thực thu" Class="p-1" Style="text-align:right; white-space:nowrap;">@(string.IsNullOrEmpty(context["TongTT"].ToString()) ? "0" : Convert.ToDecimal(context["TongTT"]).ToString("#,##0"))</MudTd>
+            <MudTd DataLabel="Tiền mặt" Class="p-1" Style="text-align:right; white-space:nowrap;">@(string.IsNullOrEmpty(context["Tienmat"].ToString()) ? "0" : Convert.ToDecimal(context["Tienmat"]).ToString("#,##0"))</MudTd>
+            <MudTd DataLabel="Tiền thẻ" Class="p-1" Style="text-align:right; white-space:nowrap;">@(string.IsNullOrEmpty(context["Tienthe"].ToString()) ? "0" : Convert.ToDecimal(context["Tienthe"]).ToString("#,##0"))</MudTd>
+            <MudTd DataLabel="Chuyển khoản" Class="p-1" Style="text-align:right; white-space:nowrap;">@(string.IsNullOrEmpty(context["Tienqrcode"].ToString()) ? "0" : Convert.ToDecimal(context["Tienqrcode"]).ToString("#,##0"))</MudTd>
+        </RowTemplate>
+        <FooterContent >
+            <MudTd Class="border p-1" Colspan="2" Style="text-align:center; font-weight:bold; font-size:larger">Tổng cộng</MudTd>
+            <MudTd Class="border p-1" Style="text-align:right; font-weight:bold; white-space:nowrap;">@totalTienhang.ToString("#,##0")</MudTd>
+            <MudTd Class="border p-1" Style="text-align:right; font-weight:bold; white-space:nowrap;">@totalThanhtientl.ToString("#,##0")</MudTd>
+            <MudTd Class="border p-1" Style="text-align:right; font-weight:bold; white-space:nowrap;">@totalTienck.ToString("#,##0")</MudTd>
+            <MudTd Class="border p-1" Style="text-align:right; font-weight:bold; white-space:nowrap;">@totalTongTT.ToString("#,##0")</MudTd>
+            <MudTd Class="border p-1" Style="text-align:right; font-weight:bold; white-space:nowrap;">@totalTienmat.ToString("#,##0")</MudTd>
+            <MudTd Class="border p-1" Style="text-align:right; font-weight:bold; white-space:nowrap;">@totalTienthe.ToString("#,##0")</MudTd>
+            <MudTd Class="border p-1" Style="text-align:right; font-weight:bold; white-space:nowrap;">@totalTienqrcode.ToString("#,##0")</MudTd>
+            
+        </FooterContent>
+    </MudTable>
+</MudPaper>
+</div>
+@code {
+    #region Khai báo biến
+    public bool _loading = false;
+
+    public DateTime? startDate = DateTime.Today;
+
+    public DateTime? endDate = DateTime.Today;
+
+    public List<string> ListTest = new();
+
+    public DataTable banleTable = new();
+
+    public int? filter = 1;
+
+    public List<Khohang> khohangs = new();
+
+    bool _expanded = true;
+
+    string khoSelected = string.Empty;
+
+    int totalTgiaodich, totalTgiaodichban, totalTgiaodichtl;
+
+    Decimal totalTienhang, totalThanhtientl, totalTienck, totalTienmat, totalTienthe, totalTienqrcode, totalTongTT;
+
+    string tableview = "58vh";
+    #endregion
+
+    #region Khởi tạo
+    protected override async Task OnInitializedAsync()
+    {
+        khohangs = await nguoidungService.GetAllKhohang();
+    }
+    #endregion
+
+    #region Phương thức
+    public void OnExpandCollapseClick()
+    {
+        _expanded = !_expanded;
+        if (_expanded)
+        {
+            tableview = "58vh";
+        }
+        else
+        {
+            tableview = "78vh";
+        }
+    }
+    public void GetData()
+    {
+        _loading = true;
+        DB.Set_Connect(_config.GetConnectionString("DefaultConnection"));
+        var maDonvi = nguoidungService.GetCookieUnit() ?? "0003";
+        banleTable = DB.BC_TOMTATBANLE(startDate ?? DateTime.Today, endDate ?? DateTime.Today, maDonvi ?? "0003", "", "", filter ?? 1, khoSelected ?? "", "");
+        TotalCal();
+        _expanded = false;
+        //tableview = "78vh";
+        StateHasChanged();
+        _loading = false;
+    }
+    public void TotalCal()
+    {
+        //Reset về 0
+        totalTgiaodich = 0; totalTgiaodichban = 0; totalTgiaodichtl = 0; totalTienhang = 0; totalThanhtientl = 0; totalTienck = 0; totalTienmat = 0; totalTienthe = 0; totalTienqrcode = 0; totalTongTT = 0;
+        foreach(var row in banleTable.Select())
+        {
+            totalTgiaodich += Convert.ToInt32(string.IsNullOrEmpty(row["Tgiaodich"].ToString()) ? "0" : row["Tgiaodich"].ToString());
+            totalTgiaodichban += Convert.ToInt32(string.IsNullOrEmpty(row["Tgiaodichban"].ToString()) ? "0" : row["Tgiaodichban"].ToString());
+            totalTgiaodichtl += Convert.ToInt32(string.IsNullOrEmpty(row["Tgiaodichtl"].ToString()) ? "0" : row["Tgiaodichtl"].ToString());
+            totalTienhang += Convert.ToDecimal(string.IsNullOrEmpty(row["Tienhang"].ToString()) ? "0" : row["Tienhang"].ToString());
+            totalThanhtientl += Convert.ToDecimal(string.IsNullOrEmpty(row["Thanhtientl"].ToString()) ? "0" : row["Thanhtientl"].ToString());
+            totalTienck += Convert.ToDecimal(string.IsNullOrEmpty(row["Tienck"].ToString()) ? "0" : row["Tienck"].ToString());
+            totalTienmat += Convert.ToDecimal(string.IsNullOrEmpty(row["Tienmat"].ToString()) ? "0" : row["Tienmat"].ToString());
+            totalTienthe += Convert.ToDecimal(string.IsNullOrEmpty(row["Tienthe"].ToString()) ? "0" : row["Tienthe"].ToString());
+            totalTienqrcode += Convert.ToDecimal(string.IsNullOrEmpty(row["Tienqrcode"].ToString()) ? "0" : row["Tienqrcode"].ToString());
+            totalTongTT += Convert.ToDecimal(string.IsNullOrEmpty(row["TongTT"].ToString()) ? "0" : row["TongTT"].ToString());
+        }
+    }
+    #endregion
+}

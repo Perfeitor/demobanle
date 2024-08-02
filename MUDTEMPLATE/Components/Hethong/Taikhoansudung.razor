@@ -1,0 +1,420 @@
+﻿@page "/Hethong/Taikhoansudung"
+@using DBDATA.Models
+@using MUDTEMPLATE.Services
+@using Microsoft.AspNetCore.Authorization
+@using MudBlazor
+
+@inject INguoidungService nguoiDungService
+
+@attribute [Authorize]
+
+@*Các trường Control có Spacing bằng 1*@
+
+<MudGrid Class="p-1">
+    @if (_create) //Tao nguoi dung
+    {
+        <MudItem xs="12" md="12">
+            <MudPaper Class="d-flex align-center justify-center mud-width-full py-8">
+                <MudGrid Spacing="1" Class="px-4">
+                    <MudItem xs="12">
+                        <MudText Typo="Typo.h6">Thông tin chung</MudText>
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <MudTextField Margin="Margin.Dense" ShrinkLabel Label="Tên đăng nhập" Variant="Variant.Outlined" @bind-Value="@newNguoidung.Tendangnhap"></MudTextField>
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <MudTextField Margin="Margin.Dense" ShrinkLabel InputType="@PasswordInput" Label="Mật khẩu" Variant="Variant.Outlined" @bind-Value="@newNguoidung.Matkhau"></MudTextField>
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <MudTextField Margin="Margin.Dense" ShrinkLabel Label="Họ và tên" Variant="Variant.Outlined" @bind-Value="@newNguoidung.Hovaten"></MudTextField>
+                    </MudItem>
+                    <MudItem xs="6" md="6">
+                        <MudSelect Margin="Margin.Dense" ShrinkLabel Dense="true" @bind-Value="@newNguoidung.Makhohang" Label="Mã kho hàng" Variant="Variant.Outlined" @bind-Value:after="updateKho">
+                            @foreach (var q in khohangs)
+                            {
+                                <MudSelectItem Value="@q.Makhohang"></MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="6" md="6">
+                        <MudField Margin="Margin.Dense" ShrinkLabel Variant="Variant.Outlined" Label="Tên kho hàng">@TenKhomoi</MudField>
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudSelect Margin="Margin.Dense" ShrinkLabel Dense="true" @bind-Value="@newNguoidung.Manhomquyen" Label="Thuộc nhóm quyền" Variant="Variant.Outlined">
+                            @foreach (var q in nhomQuyens)
+                            {
+                                <MudSelectItem Value="@q.Manhomquyen">@q.Tennhomquyen</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudTextField Margin="Margin.Dense" ShrinkLabel Label="Điện thoại" Variant="Variant.Outlined" @bind-Value=@newNguoidung.Sodienthoai></MudTextField>
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudTextField Margin="Margin.Dense" ShrinkLabel Label="Tài khoản ngân hàng" Variant="Variant.Outlined" @bind-Value="@newNguoidung.Email"></MudTextField>
+                    </MudItem>
+                    <MudItem xs="6" md="6">
+                        <MudSelect Margin="Margin.Dense" ShrinkLabel T="string" Dense="true" @bind-Value="@newNguoidung.Manvcongno" Label="Mã nhân viên" Variant="Variant.Outlined" @bind-Value:after="updateNhanvien">
+                            @foreach (var nv in nhanviens)
+                            {
+                                <MudSelectItem Value="@nv.Manhanvien"></MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="6" md="6">
+                        <MudField Margin="Margin.Dense" ShrinkLabel Variant="Variant.Outlined" Label="Tên nhân viên">@TenNVmoi</MudField>
+                    </MudItem>
+                    @if (!string.IsNullOrEmpty(errorMessage))
+                    {
+                        <MudItem xs="12">
+                            <MudAlert Severity="Severity.Warning">@errorMessage</MudAlert>
+                        </MudItem>
+                    }
+                    @if (!string.IsNullOrEmpty(successMessage))
+                    {
+                        <MudItem xs="12">
+                            <MudAlert Severity="Severity.Success">@successMessage</MudAlert>
+                        </MudItem>
+                    }
+                </MudGrid>
+            </MudPaper>
+        </MudItem>
+    }
+    @if (!_create) //Sua, xem hoac xoa nguoi dung
+    {
+        <MudItem xs="12" md="12">
+            <MudPaper Class="d-flex align-center justify-center mud-width-full py-8">
+                <MudGrid Spacing="1" Class="px-4">
+                    <MudItem xs="12">
+                        <MudText Typo="Typo.h6">Thông tin chung</MudText>
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <MudTextField Margin="Margin.Dense" ShrinkLabel ReadOnly="true" Label="Tên đăng nhập" Variant="Variant.Outlined" @bind-Value="@rSelect.Tendangnhap"></MudTextField>
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <MudTextField Margin="Margin.Dense" ShrinkLabel InputType="@PasswordInput" ReadOnly="@_readonly" Label="Mật khẩu" Variant="Variant.Outlined" @bind-Value="@EncryptPass"></MudTextField>
+                    </MudItem>
+                    <MudItem xs="12" md="4">
+                        <MudTextField Margin="Margin.Dense" ShrinkLabel ReadOnly="@_readonly" Label="Họ và tên" Variant="Variant.Outlined" @bind-Value="@rSelect.Hovaten"></MudTextField>
+                    </MudItem>
+                    <MudItem xs="6" md="6">
+                        <MudSelect Margin="Margin.Dense" ShrinkLabel ReadOnly="@_readonly" Dense="true" @bind-Value="@rSelect.Makhohang" Label="Mã kho hàng" Variant="Variant.Outlined" @bind-Value:after="updateKho">
+                            @foreach (var q in khohangs)
+                            {
+                                <MudSelectItem Value="@q.Makhohang"></MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="6" md="6">
+                        <MudField Margin="Margin.Dense" ShrinkLabel Variant="Variant.Outlined" Label="Tên kho hàng">@TenKhoSelected</MudField>
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudSelect Margin="Margin.Dense" ShrinkLabel ReadOnly="@_readonly" Dense="true" @bind-Value="@rSelect.Manhomquyen" Label="Thuộc nhóm quyền" Variant="Variant.Outlined">
+                            @foreach (var q in nhomQuyens)
+                            {
+                                <MudSelectItem Value="@q.Manhomquyen">@q.Tennhomquyen</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12" md="6">
+                        <MudSelect Margin="Margin.Dense" ShrinkLabel ReadOnly="@_readonly" Dense="true" @bind-Value="@rSelect.Trangthai" Label="Tình trạng" Variant="Variant.Outlined">
+                            <MudSelectItem T="int?" Value="1">Đang sử dụng</MudSelectItem>
+                            <MudSelectItem T="int?" Value="0">Ngừng sử dụng</MudSelectItem>
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudTextField Margin="Margin.Dense" ShrinkLabel ReadOnly="@_readonly" Label="Điện thoại" Variant="Variant.Outlined" @bind-Value="@rSelect.Sodienthoai"></MudTextField>
+                    </MudItem>
+                    <MudItem xs="12">
+                        <MudTextField Margin="Margin.Dense" ShrinkLabel ReadOnly="@_readonly" Label="Tài khoản ngân hàng" Variant="Variant.Outlined" @bind-Value="@rSelect.Email"></MudTextField>
+                    </MudItem>
+                    <MudItem xs="6" md="6">
+                        <MudSelect Margin="Margin.Dense" ShrinkLabel="true" T="string" ReadOnly="@_readonly" Dense="true" @bind-Value="@rSelect.Manvcongno" Label="Mã nhân viên" Variant="Variant.Outlined" @bind-Value:after="updateNhanvien">
+                            @foreach(var nv in nhanviens)
+                            {
+                                <MudSelectItem Value="@nv.Manhanvien"></MudSelectItem>
+                                
+                            }
+                        </MudSelect>
+                    </MudItem>
+                    <MudItem xs="6" md="6">
+                        <MudField Margin="Margin.Dense" ShrinkLabel Variant="Variant.Outlined" Label="Tên nhân viên">@TenNVSelected</MudField>
+                    </MudItem>
+                    @if (!string.IsNullOrEmpty(errorMessage))
+                    {
+                        <MudItem xs="12">
+                            <MudAlert Severity="Severity.Warning">@errorMessage</MudAlert>
+                        </MudItem>
+                    }
+                    @if (!string.IsNullOrEmpty(successMessage))
+                    {
+                        <MudItem xs="12">
+                            <MudAlert Severity="Severity.Success">@successMessage</MudAlert>
+                        </MudItem>
+                    }
+                </MudGrid>
+            </MudPaper>
+        </MudItem>
+    }
+    <MudItem xs="12" md="12" Class="px-5">
+        <MudButton xs="4" Size="Size.Small" Disabled="@btnStatus" Class="mr-1 mb-2" Variant="Variant.Filled" OnClick="Add" StartIcon="@Icons.Material.Filled.Add" Color="Color.Primary">Thêm</MudButton>
+        <MudButton xs="4" Size="Size.Small" Disabled="@btnStatus" Class="mr-1 mb-2" Variant="Variant.Filled" OnClick="Edit" StartIcon="@Icons.Material.Filled.Edit" Color="Color.Warning">Sửa</MudButton>
+        <MudButton xs="4" Size="Size.Small" Disabled="@btnStatus" Class="mr-1 mb-2" Variant="Variant.Filled" OnClick="Delete" StartIcon="@Icons.Material.Filled.Delete" Color="Color.Error">Xoá</MudButton>
+        <MudButton xs="6" Size="Size.Small" Disabled="@(!btnStatus)" Class="mr-1 mb-2" Variant="Variant.Filled" OnClick="Confirm" StartIcon="@Icons.Material.Filled.Check" Color="Color.Success">Xác nhận</MudButton>
+        <MudButton xs="6" Size="Size.Small" Disabled="@(!btnStatus)" Class="mr-1 mb-2" Variant="Variant.Filled" OnClick="Cancel" StartIcon="@Icons.Material.Filled.Cancel" Color="Color.Error">Huỷ bỏ</MudButton>
+    </MudItem>
+    <MudItem xs="12" md="12">
+        <MudPaper Class="d-flex align-center justify-center mud-width-full py-8 p-4">
+            <MudDataGrid Dense="true" Breakpoint="Breakpoint.None" ColumnResizeMode="ResizeMode.Container" Loading="@_loading" Bordered="true" Striped="true" Items="@nguoiDungs" class="container-fluid" SortMode="SortMode.Multiple" MultiSelection="false" RowClassFunc="SelectRow" Hover="true" @bind-SelectedItem="@rSelect" @bind-SelectedItem:after="updateSelectedItem">
+                <Columns>
+                    <PropertyColumn Property="x => x.Tendangnhap" Title="Tên đăng nhập" />
+                    <PropertyColumn Property="x => x.Manguoitao" Title="Người tạo" />
+                    <PropertyColumn Property="x => x.Matkhau" Title="Mật khẩu" />
+                    <PropertyColumn Property="x => x.Hovaten" Title="Họ và tên" />
+                    <PropertyColumn Property="x => x.Ngaytao" Title="Ngày tạo" />
+                </Columns>
+                <PagerContent>
+                    <MudDataGridPager T="Nguoidung" />
+                </PagerContent>
+            </MudDataGrid>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+@code {
+    #region Khai báo
+    int selectedRowNumber = 0;
+
+    bool _loading = false;
+
+    string? EncryptPass;
+
+    string? TenNVSelected;
+
+    string? TenKhoSelected;
+
+    string? TenNVmoi;
+
+    string? TenKhomoi;
+
+    string? errorMessage = null;
+
+    string? successMessage = null;
+
+    bool btnStatus = false;
+
+    bool _readonly = true;
+
+    bool _create = false;
+
+    Nguoidung newNguoidung = new();
+
+    Nguoidung rSelect = new();
+
+    List<Nguoidung> nguoiDungs = new();
+
+    List<Nhomquyen> nhomQuyens = new();
+
+    List<Nhanvien> nhanviens = new();
+
+    List<Khohang> khohangs = new();
+
+    InputType PasswordInput = InputType.Password;
+
+    #endregion
+
+    #region Khởi tạo
+    protected override async Task OnInitializedAsync()
+    {
+        _loading = true;
+        nguoiDungs = await nguoiDungService.GetAllNguoidung();
+        nhomQuyens = await nguoiDungService.GetAllNhomquyen();
+        nhanviens = await nguoiDungService.GetAllNhanvien();
+        khohangs = await nguoiDungService.GetAllKhohang();
+        if(nguoiDungs.Count>0)
+            rSelect = nguoiDungs[0];
+        _loading = false;
+    }
+    #endregion
+
+    #region Phương thức
+    public void Delete()
+    {
+        if(string.IsNullOrEmpty(rSelect.Tendangnhap))
+        {
+            errorMessage = "Không có người dùng được chọn";
+            return;
+        }
+        errorMessage = null;
+        btnStatus = true;
+        successMessage = null;
+    }
+    public void Add()
+    {
+        newNguoidung = new();
+        rSelect = new();
+        _create = true;
+        btnStatus = true;
+        successMessage = null;
+        errorMessage = null;
+    }
+    public void Edit()
+    {
+        if (string.IsNullOrEmpty(rSelect.Tendangnhap))
+        {
+            errorMessage = "Không có người dùng được chọn";
+            return;
+        }
+        _readonly = false;
+        errorMessage = null;
+        successMessage = null;
+        btnStatus = true;
+    }
+    public async void Confirm()
+    {
+        _loading = true;
+        //Xử lý xác nhận
+        if (_create)
+        {
+            //Thêm người dùng
+            if (!string.IsNullOrEmpty(newNguoidung.Tendangnhap) && !string.IsNullOrEmpty(newNguoidung.Matkhau) && !string.IsNullOrEmpty(newNguoidung.Hovaten) && !string.IsNullOrEmpty(newNguoidung.Manhomquyen))
+            {
+                newNguoidung.Trangthai = 1;
+                newNguoidung.Madonvi = nguoiDungService.GetCookieUnit();
+                newNguoidung.Manguoitao = nguoiDungService.GetCookieName();
+                await nguoiDungService.AddNguoidung(newNguoidung);
+                nguoiDungs = await nguoiDungService.GetAllNguoidung();
+                successMessage = "Đã thêm người dùng";
+            }
+            else
+            {
+                errorMessage = "Vui lòng điền đủ thông tin";
+            }
+        }
+        if (!_create)
+        {
+            if(!_readonly && btnStatus)
+            {
+                //Sửa người dùng
+                rSelect.Manguoisua = nguoiDungService.GetCookieName();
+                await nguoiDungService.UpdateNguoidung(rSelect, EncryptPass);
+                nguoiDungs = await nguoiDungService.GetAllNguoidung();
+                successMessage = "Đã sửa";
+            }
+            else
+            if (btnStatus)
+            {
+                //Xoá người dùng
+                await nguoiDungService.DeleteNguoidung(rSelect);
+                nguoiDungs = await nguoiDungService.GetAllNguoidung();
+                successMessage = "Đã xoá";
+            }
+        }
+
+        _loading = false;
+
+        btnStatus = false;
+
+        _readonly = true;
+
+        _create = false;
+
+        newNguoidung = new();
+
+        rSelect = new();
+
+        StateHasChanged();
+    }
+    public void Cancel()
+    {
+        newNguoidung = new();
+
+        rSelect = new();
+
+        btnStatus = false;
+
+        _readonly = true;
+
+        _create = false;
+    }
+    public void updateDecryptPass()
+    {
+        if (!string.IsNullOrEmpty(rSelect.Matkhau))
+        {
+            EncryptPass = nguoiDungService.DecryptPass(rSelect.Matkhau);
+        }
+        else
+        {
+            EncryptPass = null;
+        }
+    }
+    public void updateNhanvien()
+    {
+        if (!string.IsNullOrEmpty(rSelect.Manvcongno))
+        {
+            TenNVSelected = nhanviens.FirstOrDefault(nv => nv.Manhanvien == rSelect.Manvcongno).Tennhanvien;
+        }
+        else
+        {
+            TenNVSelected = null;
+        }
+        if (!string.IsNullOrEmpty(newNguoidung.Manvcongno))
+        {
+            TenNVmoi = nhanviens.FirstOrDefault(nv => nv.Manhanvien == newNguoidung.Manvcongno).Tennhanvien;
+        }
+        else
+        {
+            TenNVmoi = null;
+        }
+    }
+    public void updateKho()
+    {
+        if (!string.IsNullOrEmpty(rSelect.Makhohang))
+        {
+            TenKhoSelected = khohangs.FirstOrDefault(nv => nv.Makhohang == rSelect.Makhohang).Tenkhohang;
+        }
+        else
+        {
+            TenKhoSelected = null;
+        }
+        if (!string.IsNullOrEmpty(newNguoidung.Makhohang))
+        {
+            TenKhomoi = khohangs.FirstOrDefault(nv => nv.Makhohang == newNguoidung.Makhohang).Tenkhohang;
+        }
+        else
+        {
+            TenKhomoi = null;
+        }
+    }
+    public void updateSelectedItem()
+    {
+        updateDecryptPass();
+        updateNhanvien();
+        updateKho();
+    }
+    public string SelectRow(Nguoidung user, int rowNumber)
+    {
+        if (rSelect != null && rSelect.Equals(user))
+        {
+            selectedRowNumber = rowNumber;
+            return "selected";
+        }
+        else return string.Empty;
+    }
+    #endregion
+}
+
+@*Dòng nào được chọn thì áp dụng cái này*@
+<style>
+    .selected {
+        background-color: #1E88E5 !important;
+    }
+
+        .selected > td {
+            color: white !important;
+        }
+
+            .selected > td .mud-input {
+                color: white !important;
+            }
+</style>
